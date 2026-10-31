@@ -33,13 +33,13 @@ public class PlayerInspectorPlugin extends Plugin {
     @Inject
     private Client client;
 
-    @Inject
     private PlayerInspectorPanel panel;
 
     @Override
     protected void startUp() throws Exception {
         log.info("Player Inspector started!");
         addMenuEntry();
+        panel = injector.getInstance(PlayerInspectorPanel.class);
         panel.init();
     }
 
@@ -68,9 +68,8 @@ public class PlayerInspectorPlugin extends Plugin {
             return;
         }
 
-        panel.openPanel();
-        log.info("clicked " + target.getName());
-        // todo: open panel for this target
+        String playerName = target.getName();
+        panel.openPanel(playerName);
     }
 
 
