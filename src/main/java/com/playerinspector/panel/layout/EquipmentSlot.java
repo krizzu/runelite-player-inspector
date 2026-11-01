@@ -1,11 +1,12 @@
 package com.playerinspector.panel.layout;
 
+import net.runelite.api.ItemComposition;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
+import net.runelite.client.util.AsyncBufferedImage;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.image.BufferedImage;
 import java.util.function.Consumer;
 
@@ -17,24 +18,29 @@ public class EquipmentSlot extends JPanel {
     }
 
     public Type type;
-    public JPanel panel;
+    private JLabel icon = new JLabel();
 
     private Dimension preferredDims = new Dimension(36, 36);
     private SpriteManager sprites;
+    private ItemManager items;
 
-    public EquipmentSlot(Type type, SpriteManager sprites) {
+    // an icon of a slot itself, when empty. Buffered after init.
+    private BufferedImage emptyImage;
+
+    public EquipmentSlot(Type type, SpriteManager sprites, ItemManager items) {
         this.type = type;
         this.sprites = sprites;
+        this.items = items;
 
         setLayout(new OverlayLayout(this));
         setPreferredSize(preferredDims);
         setOpaque(false);
 
         // add icon first, so it is shown on top of the background
-        JLabel icon = new JLabel();
         add(icon);
         loadSprite(getSpriteIndex(), bufferedImage -> {
             // centers the icon
+            emptyImage = bufferedImage;
             icon.setIcon(new ImageIcon(bufferedImage));
             icon.setPreferredSize(preferredDims);
             icon.setMinimumSize(preferredDims);
@@ -43,10 +49,42 @@ public class EquipmentSlot extends JPanel {
             icon.setVerticalAlignment(SwingConstants.CENTER);
         });
 
-
         JLabel background = new JLabel();
         sprites.addSpriteTo(background, 170, 0);
+        background.setPreferredSize(preferredDims);
+        background.setMinimumSize(preferredDims);
+        background.setMaximumSize(preferredDims);
+        background.setHorizontalAlignment(SwingConstants.CENTER);
+        background.setVerticalAlignment(SwingConstants.CENTER);
         add(background);
+    }
+
+    public void setEquipmentItem(ItemComposition item) {
+        AsyncBufferedImage img = items.getImage(item.getId());
+
+        // todo: items are not centered for some strange reason
+        img.onLoaded(() -> {
+            icon.setIcon(new ImageIcon(img));
+            icon.setPreferredSize(preferredDims);
+            icon.setMinimumSize(preferredDims);
+            icon.setMaximumSize(preferredDims);
+            icon.setHorizontalAlignment(SwingConstants.CENTER);
+            icon.setVerticalAlignment(SwingConstants.CENTER);
+        });
+
+        // todo: format values to be easier to read
+        String text = item.getName() + "\n" + "GE Price: " + item.getPrice() + "\n" + "HA Price: " + item.getHaPrice();
+
+        icon.setToolTipText(text);
+    }
+
+    public void clearEquipmentItem() {
+        if (emptyImage == null) {
+            throw new RuntimeException("Empty image used too soon, should not be null!");
+        }
+
+        icon.setIcon(new ImageIcon(emptyImage));
+        icon.setToolTipText("");
     }
 
 
@@ -81,7 +119,7 @@ public class EquipmentSlot extends JPanel {
     }
 
     // copy-paste from addSpriteTo, but allows to handle loaded image differently
-    public void loadSprite(int index, Consumer<BufferedImage> consumer) {
+    private void loadSprite(int index, Consumer<BufferedImage> consumer) {
         this.sprites.getSpriteAsync(index, 0, img ->
         {
             SwingUtilities.invokeLater(() ->

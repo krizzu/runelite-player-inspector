@@ -1,6 +1,13 @@
 package com.playerinspector.panel;
 
+import com.playerinspector.panel.layout.EquipmentSlot;
 import com.playerinspector.panel.layout.PlayerInspectorLayout;
+import net.runelite.api.ItemComposition;
+import net.runelite.api.Player;
+import net.runelite.api.PlayerComposition;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.kit.KitType;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
@@ -23,14 +30,18 @@ public class PlayerInspectorPanel extends PluginPanel {
     @Inject
     private SpriteManager spriteManager;
 
+    @Inject
+    private ItemManager itemManager;
+
     private PlayerInspectorLayout layout;
 
     private NavigationButton navButton;
 
-    public PlayerInspectorPanel() {}
+    public PlayerInspectorPanel() {
+    }
 
     public void init() {
-        layout = new PlayerInspectorLayout(spriteManager);
+        layout = new PlayerInspectorLayout(spriteManager, itemManager);
         navButton = navManager.create(this);
         layout.init(this);
         toolbar.addNavigation(navButton);
@@ -40,23 +51,83 @@ public class PlayerInspectorPanel extends PluginPanel {
         toolbar.removeNavigation(navButton);
     }
 
-    public void openPanel() {
-        openPanel("");
+
+    public void showEquipment(Player player) {
+
+        PlayerComposition comp = player.getPlayerComposition();
+        for (KitType kitType : KitType.values()) {
+            EquipmentSlot.Type slotType = kitTypeToSlot(kitType);
+            // todo: for local player, need to map ring and ammo!
+            if (slotType == null) {
+                continue;
+            }
+
+            int eqId = comp.getEquipmentId(kitType);
+            ItemComposition item = itemManager.getItemComposition(eqId);
+
+            if (item == null) {
+                continue;
+            }
+
+            boolean isItem = eqId > 0;
+            if (!isItem) {
+                layout.clearEquipmentItem(slotType);
+            } else {
+                layout.setEquipmentItem(slotType, item);
+            }
+
+
+        }
+
     }
 
-    public void openPanel(String playerName) {
+
+    public void openPanel(Player player) {
         try {
             SwingUtilities.invokeAndWait(() -> {
                         toolbar.openPanel(navButton);
-
-                        if (playerName != null && !playerName.isEmpty()) {
-                            layout.setSearch(playerName);
+                        if (player != null) {
+                            layout.setSearch(player.getName());
                         }
                     }
             );
+            // needs to run on client thread
+            showEquipment(player);
         } catch (InterruptedException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
     }
 
+
+    private EquipmentSlot.Type kitTypeToSlot(KitType kit) {
+        switch (kit) {
+            case HEAD:
+                return EquipmentSlot.Type.Head;
+            case CAPE:
+                return EquipmentSlot.Type.Cape;
+            case AMULET:
+                return EquipmentSlot.Type.Amulet;
+            case WEAPON:
+                return EquipmentSlot.Type.RightHand;
+            case TORSO:
+                return EquipmentSlot.Type.Body;
+            case SHIELD:
+                return EquipmentSlot.Type.LeftHand;
+            case LEGS:
+                return EquipmentSlot.Type.Legs;
+            case HANDS:
+                return EquipmentSlot.Type.Gloves;
+            case BOOTS:
+                return EquipmentSlot.Type.Boots;
+            case ARMS:
+            case HAIR:
+            case JAW:
+                // pure cosmetic kit pieces, no corresponding equipment slot
+                return null;
+            default:
+                throw new IllegalArgumentException("Unknown KitType: " + kit);
+        }
+    }
+
 }
+

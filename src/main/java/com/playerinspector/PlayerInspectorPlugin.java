@@ -64,12 +64,11 @@ public class PlayerInspectorPlugin extends Plugin {
         }
 
         Player target = entry.getPlayer();
-        if (entry.getPlayer() == null) {
+        if (target == null) {
             return;
         }
 
-        String playerName = target.getName();
-        panel.openPanel(playerName);
+        panel.openPanel(target);
     }
 
 

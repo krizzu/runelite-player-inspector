@@ -1,17 +1,17 @@
 package com.playerinspector.panel.layout;
 
+import com.formdev.flatlaf.util.SwingUtils;
+import net.runelite.api.ItemComposition;
+import net.runelite.api.PlayerComposition;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.PluginPanel;
+import net.runelite.client.util.AsyncBufferedImage;
 
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * todo: in one row, add search + button to search
- *  - button should be in loading state, once loading
- *  - on Enter press, loading state
- *  - when input.length >= 1, show X to clear
- */
+
 public class PlayerInspectorLayout {
     private final JTextField searchInput = new JTextField();
     private final JButton searchButton = new JButton("search");
@@ -28,18 +28,18 @@ public class PlayerInspectorLayout {
     private final EquipmentSlot boots;
     private final EquipmentSlot ring;
 
-    public PlayerInspectorLayout(SpriteManager spriteManager) {
-        this.head = new EquipmentSlot(EquipmentSlot.Type.Head, spriteManager);
-        this.cape = new EquipmentSlot(EquipmentSlot.Type.Cape, spriteManager);
-        this.amulet = new EquipmentSlot(EquipmentSlot.Type.Amulet, spriteManager);
-        this.ammo = new EquipmentSlot(EquipmentSlot.Type.Ammo, spriteManager);
-        this.rightHand = new EquipmentSlot(EquipmentSlot.Type.RightHand, spriteManager);
-        this.body = new EquipmentSlot(EquipmentSlot.Type.Body, spriteManager);
-        this.leftHand = new EquipmentSlot(EquipmentSlot.Type.LeftHand, spriteManager);
-        this.legs = new EquipmentSlot(EquipmentSlot.Type.Legs, spriteManager);
-        this.gloves = new EquipmentSlot(EquipmentSlot.Type.Gloves, spriteManager);
-        this.boots = new EquipmentSlot(EquipmentSlot.Type.Boots, spriteManager);
-        this.ring = new EquipmentSlot(EquipmentSlot.Type.Ring, spriteManager);
+    public PlayerInspectorLayout(SpriteManager spriteManager, ItemManager itemManager) {
+        this.head = new EquipmentSlot(EquipmentSlot.Type.Head, spriteManager, itemManager);
+        this.cape = new EquipmentSlot(EquipmentSlot.Type.Cape, spriteManager, itemManager);
+        this.amulet = new EquipmentSlot(EquipmentSlot.Type.Amulet, spriteManager, itemManager);
+        this.ammo = new EquipmentSlot(EquipmentSlot.Type.Ammo, spriteManager, itemManager);
+        this.rightHand = new EquipmentSlot(EquipmentSlot.Type.RightHand, spriteManager, itemManager);
+        this.body = new EquipmentSlot(EquipmentSlot.Type.Body, spriteManager, itemManager);
+        this.leftHand = new EquipmentSlot(EquipmentSlot.Type.LeftHand, spriteManager, itemManager);
+        this.legs = new EquipmentSlot(EquipmentSlot.Type.Legs, spriteManager, itemManager);
+        this.gloves = new EquipmentSlot(EquipmentSlot.Type.Gloves, spriteManager, itemManager);
+        this.boots = new EquipmentSlot(EquipmentSlot.Type.Boots, spriteManager, itemManager);
+        this.ring = new EquipmentSlot(EquipmentSlot.Type.Ring, spriteManager, itemManager);
     }
 
     public void init(PluginPanel panel) {
@@ -57,6 +57,18 @@ public class PlayerInspectorLayout {
 
     public void setSearch(String text) {
         searchInput.setText(text);
+    }
+
+    public void setEquipmentItem(EquipmentSlot.Type slot, ItemComposition item) {
+        EquipmentSlot eq = selectEquipmentSlot(slot);
+        SwingUtilities.invokeLater(() -> {
+            eq.setEquipmentItem(item);
+        });
+    }
+
+    public void clearEquipmentItem(EquipmentSlot.Type slot) {
+        EquipmentSlot eq = selectEquipmentSlot(slot);
+        SwingUtilities.invokeLater(eq::clearEquipmentItem);
     }
 
     private JPanel createSearchPanel() {
