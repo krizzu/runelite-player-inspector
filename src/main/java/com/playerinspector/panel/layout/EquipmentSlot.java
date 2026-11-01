@@ -6,6 +6,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.image.BufferedImage;
+import java.util.function.Consumer;
 
 
 public class EquipmentSlot extends JPanel {
@@ -17,23 +19,30 @@ public class EquipmentSlot extends JPanel {
     public Type type;
     public JPanel panel;
 
+    private Dimension preferredDims = new Dimension(36, 36);
     private SpriteManager sprites;
 
     public EquipmentSlot(Type type, SpriteManager sprites) {
         this.type = type;
         this.sprites = sprites;
 
-        Dimension dims = new Dimension(36, 36);
-
         setLayout(new OverlayLayout(this));
-        setPreferredSize(dims);
+        setPreferredSize(preferredDims);
         setOpaque(false);
 
         // add icon first, so it is shown on top of the background
         JLabel icon = new JLabel();
-        icon.setHorizontalAlignment(SwingConstants.RIGHT);
-        sprites.addSpriteTo(icon, getSpriteIndex(), 0);
         add(icon);
+        loadSprite(getSpriteIndex(), bufferedImage -> {
+            // centers the icon
+            icon.setIcon(new ImageIcon(bufferedImage));
+            icon.setPreferredSize(preferredDims);
+            icon.setMinimumSize(preferredDims);
+            icon.setMaximumSize(preferredDims);
+            icon.setHorizontalAlignment(SwingConstants.CENTER);
+            icon.setVerticalAlignment(SwingConstants.CENTER);
+        });
+
 
         JLabel background = new JLabel();
         sprites.addSpriteTo(background, 170, 0);
@@ -71,4 +80,14 @@ public class EquipmentSlot extends JPanel {
         }
     }
 
+    // copy-paste from addSpriteTo, but allows to handle loaded image differently
+    public void loadSprite(int index, Consumer<BufferedImage> consumer) {
+        this.sprites.getSpriteAsync(index, 0, img ->
+        {
+            SwingUtilities.invokeLater(() ->
+            {
+                consumer.accept(img);
+            });
+        });
+    }
 }
