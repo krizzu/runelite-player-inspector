@@ -1,6 +1,7 @@
 package com.playerinspector.panel;
 
 import com.playerinspector.panel.layout.PlayerInspectorLayout;
+import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.PluginPanel;
@@ -19,6 +20,9 @@ public class PlayerInspectorPanel extends PluginPanel {
     @Inject
     private NavButtonManager navManager;
 
+    @Inject
+    private SpriteManager spriteManager;
+
     private PlayerInspectorLayout layout;
 
     private NavigationButton navButton;
@@ -26,7 +30,7 @@ public class PlayerInspectorPanel extends PluginPanel {
     public PlayerInspectorPanel() {}
 
     public void init() {
-        layout = new PlayerInspectorLayout();
+        layout = new PlayerInspectorLayout(spriteManager);
         navButton = navManager.create(this);
         layout.init(this);
         toolbar.addNavigation(navButton);
