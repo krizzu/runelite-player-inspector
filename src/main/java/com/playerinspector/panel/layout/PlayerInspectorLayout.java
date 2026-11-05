@@ -1,7 +1,6 @@
 package com.playerinspector.panel.layout;
 
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import net.runelite.api.ItemComposition;
 import net.runelite.client.ui.PluginPanel;
 

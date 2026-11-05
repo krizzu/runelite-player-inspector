@@ -22,7 +22,7 @@ public class EquipmentSlot extends JPanel {
     }
 
     public Type type;
-    private JLabel icon = new JLabel();
+    private JLabel icon = createLabel();
 
     private Dimension preferredDims = new Dimension(36, 36);
     private SpriteManager sprites;
@@ -48,38 +48,21 @@ public class EquipmentSlot extends JPanel {
             // centers the icon
             emptyImage = bufferedImage;
             icon.setIcon(new ImageIcon(bufferedImage));
-            icon.setPreferredSize(preferredDims);
-            icon.setMinimumSize(preferredDims);
-            icon.setMaximumSize(preferredDims);
-            icon.setHorizontalAlignment(SwingConstants.CENTER);
-            icon.setVerticalAlignment(SwingConstants.CENTER);
+            centerLabel(icon);
         });
 
         JLabel background = new JLabel();
         sprites.addSpriteTo(background, 170, 0);
-        background.setPreferredSize(preferredDims);
-        background.setMinimumSize(preferredDims);
-        background.setMaximumSize(preferredDims);
-        background.setHorizontalAlignment(SwingConstants.CENTER);
-        background.setVerticalAlignment(SwingConstants.CENTER);
+        centerLabel(background);
         add(background);
     }
 
-    // todo:
-    // - format GE and HE prices (number format)
-    // - try to center items - they are left aligned again
-    // - show total GE value from an item (diff panel)
     public void setEquipmentItem(ItemComposition item) {
         AsyncBufferedImage img = items.getImage(item.getId());
 
-        // todo: items are not centered for some strange reason
         img.onLoaded(() -> {
-            icon.setIcon(new ImageIcon(img));
-            icon.setPreferredSize(preferredDims);
-            icon.setMinimumSize(preferredDims);
-            icon.setMaximumSize(preferredDims);
-            icon.setHorizontalAlignment(SwingConstants.CENTER);
-            icon.setVerticalAlignment(SwingConstants.CENTER);
+            img.addTo(icon);
+            centerLabel(icon);
         });
 
 
@@ -144,11 +127,20 @@ public class EquipmentSlot extends JPanel {
     // copy-paste from addSpriteTo, but allows to handle loaded image differently
     private void loadSprite(int index, Consumer<BufferedImage> consumer) {
         this.sprites.getSpriteAsync(index, 0, img ->
-        {
-            SwingUtilities.invokeLater(() ->
-            {
-                consumer.accept(img);
-            });
-        });
+                SwingUtilities.invokeLater(() -> consumer.accept(img)));
+    }
+
+    private JLabel createLabel() {
+        JLabel label = new JLabel();
+        return centerLabel(label);
+    }
+
+    private JLabel centerLabel(JLabel label) {
+        label.setPreferredSize(preferredDims);
+        label.setMinimumSize(preferredDims);
+        label.setMaximumSize(preferredDims);
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+        label.setVerticalAlignment(SwingConstants.CENTER);
+        return label;
     }
 }
