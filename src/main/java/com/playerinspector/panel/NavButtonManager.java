@@ -1,10 +1,10 @@
 package com.playerinspector.panel;
 
+import com.google.inject.Singleton;
 import com.playerinspector.Constants;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
 
-import javax.inject.Singleton;
 import java.awt.image.BufferedImage;
 
 @Singleton

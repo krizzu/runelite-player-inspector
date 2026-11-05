@@ -1,21 +1,19 @@
 package com.playerinspector.panel;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.playerinspector.panel.layout.EquipmentSlot;
 import com.playerinspector.panel.layout.PlayerInspectorLayout;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.Player;
 import net.runelite.api.PlayerComposition;
-import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.kit.KitType;
-import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.PluginPanel;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
 
@@ -35,17 +33,15 @@ public class PlayerInspectorPanel extends PluginPanel {
     private ItemManager itemManager;
 
     @Inject
-    ClientThread clientThread;
-
     private PlayerInspectorLayout layout;
 
     private NavigationButton navButton;
 
+    @Inject
     public PlayerInspectorPanel() {
     }
 
     public void init() {
-        layout = new PlayerInspectorLayout(spriteManager, itemManager, clientThread);
         navButton = navManager.create(this);
         layout.init(this);
         toolbar.addNavigation(navButton);

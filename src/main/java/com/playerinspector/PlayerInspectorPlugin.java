@@ -1,5 +1,6 @@
 package com.playerinspector;
 
+import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.playerinspector.panel.PlayerInspectorPanel;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +14,6 @@ import net.runelite.client.menus.MenuManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 
-import javax.inject.Inject;
 import java.util.Objects;
 
 
@@ -33,6 +33,7 @@ public class PlayerInspectorPlugin extends Plugin {
     @Inject
     private Client client;
 
+    @Inject
     private PlayerInspectorPanel panel;
 
     @Override
