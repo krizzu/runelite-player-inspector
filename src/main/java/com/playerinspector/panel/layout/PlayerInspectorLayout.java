@@ -1,12 +1,10 @@
 package com.playerinspector.panel.layout;
 
-import com.formdev.flatlaf.util.SwingUtils;
 import net.runelite.api.ItemComposition;
-import net.runelite.api.PlayerComposition;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.PluginPanel;
-import net.runelite.client.util.AsyncBufferedImage;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,18 +26,18 @@ public class PlayerInspectorLayout {
     private final EquipmentSlot boots;
     private final EquipmentSlot ring;
 
-    public PlayerInspectorLayout(SpriteManager spriteManager, ItemManager itemManager) {
-        this.head = new EquipmentSlot(EquipmentSlot.Type.Head, spriteManager, itemManager);
-        this.cape = new EquipmentSlot(EquipmentSlot.Type.Cape, spriteManager, itemManager);
-        this.amulet = new EquipmentSlot(EquipmentSlot.Type.Amulet, spriteManager, itemManager);
-        this.ammo = new EquipmentSlot(EquipmentSlot.Type.Ammo, spriteManager, itemManager);
-        this.rightHand = new EquipmentSlot(EquipmentSlot.Type.RightHand, spriteManager, itemManager);
-        this.body = new EquipmentSlot(EquipmentSlot.Type.Body, spriteManager, itemManager);
-        this.leftHand = new EquipmentSlot(EquipmentSlot.Type.LeftHand, spriteManager, itemManager);
-        this.legs = new EquipmentSlot(EquipmentSlot.Type.Legs, spriteManager, itemManager);
-        this.gloves = new EquipmentSlot(EquipmentSlot.Type.Gloves, spriteManager, itemManager);
-        this.boots = new EquipmentSlot(EquipmentSlot.Type.Boots, spriteManager, itemManager);
-        this.ring = new EquipmentSlot(EquipmentSlot.Type.Ring, spriteManager, itemManager);
+    public PlayerInspectorLayout(SpriteManager spriteManager, ItemManager itemManager, ClientThread clientThread) {
+        this.head = new EquipmentSlot(EquipmentSlot.Type.Head, spriteManager, itemManager, clientThread);
+        this.cape = new EquipmentSlot(EquipmentSlot.Type.Cape, spriteManager, itemManager, clientThread);
+        this.amulet = new EquipmentSlot(EquipmentSlot.Type.Amulet, spriteManager, itemManager, clientThread);
+        this.ammo = new EquipmentSlot(EquipmentSlot.Type.Ammo, spriteManager, itemManager, clientThread);
+        this.rightHand = new EquipmentSlot(EquipmentSlot.Type.RightHand, spriteManager, itemManager, clientThread);
+        this.body = new EquipmentSlot(EquipmentSlot.Type.Body, spriteManager, itemManager, clientThread);
+        this.leftHand = new EquipmentSlot(EquipmentSlot.Type.LeftHand, spriteManager, itemManager, clientThread);
+        this.legs = new EquipmentSlot(EquipmentSlot.Type.Legs, spriteManager, itemManager, clientThread);
+        this.gloves = new EquipmentSlot(EquipmentSlot.Type.Gloves, spriteManager, itemManager, clientThread);
+        this.boots = new EquipmentSlot(EquipmentSlot.Type.Boots, spriteManager, itemManager, clientThread);
+        this.ring = new EquipmentSlot(EquipmentSlot.Type.Ring, spriteManager, itemManager, clientThread);
     }
 
     public void init(PluginPanel panel) {

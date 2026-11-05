@@ -7,6 +7,7 @@ import net.runelite.api.Player;
 import net.runelite.api.PlayerComposition;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.kit.KitType;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.ClientToolbar;
@@ -33,6 +34,9 @@ public class PlayerInspectorPanel extends PluginPanel {
     @Inject
     private ItemManager itemManager;
 
+    @Inject
+    ClientThread clientThread;
+
     private PlayerInspectorLayout layout;
 
     private NavigationButton navButton;
@@ -41,7 +45,7 @@ public class PlayerInspectorPanel extends PluginPanel {
     }
 
     public void init() {
-        layout = new PlayerInspectorLayout(spriteManager, itemManager);
+        layout = new PlayerInspectorLayout(spriteManager, itemManager, clientThread);
         navButton = navManager.create(this);
         layout.init(this);
         toolbar.addNavigation(navButton);

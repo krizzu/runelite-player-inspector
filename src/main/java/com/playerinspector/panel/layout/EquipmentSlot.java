@@ -1,9 +1,11 @@
 package com.playerinspector.panel.layout;
 
 import net.runelite.api.ItemComposition;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.util.AsyncBufferedImage;
+import net.runelite.client.util.QuantityFormatter;
 
 import javax.swing.*;
 import java.awt.*;
@@ -23,14 +25,16 @@ public class EquipmentSlot extends JPanel {
     private Dimension preferredDims = new Dimension(36, 36);
     private SpriteManager sprites;
     private ItemManager items;
+    private ClientThread clientThread;
 
     // an icon of a slot itself, when empty. Buffered after init.
     private BufferedImage emptyImage;
 
-    public EquipmentSlot(Type type, SpriteManager sprites, ItemManager items) {
+    public EquipmentSlot(Type type, SpriteManager sprites, ItemManager items, ClientThread clientThread) {
         this.type = type;
         this.sprites = sprites;
         this.items = items;
+        this.clientThread = clientThread;
 
         setLayout(new OverlayLayout(this));
         setPreferredSize(preferredDims);
@@ -59,6 +63,10 @@ public class EquipmentSlot extends JPanel {
         add(background);
     }
 
+    // todo:
+    // - format GE and HE prices (number format)
+    // - try to center items - they are left aligned again
+    // - show total GE value from an item (diff panel)
     public void setEquipmentItem(ItemComposition item) {
         AsyncBufferedImage img = items.getImage(item.getId());
 
@@ -72,10 +80,23 @@ public class EquipmentSlot extends JPanel {
             icon.setVerticalAlignment(SwingConstants.CENTER);
         });
 
-        // todo: format values to be easier to read
-        String text = item.getName() + "\n" + "GE Price: " + item.getPrice() + "\n" + "HA Price: " + item.getHaPrice();
 
-        icon.setToolTipText(text);
+        clientThread.invoke(() -> {
+            String gePrice = QuantityFormatter.formatNumber(items.getItemPrice(item.getId()));
+            String haPrice = QuantityFormatter.formatNumber(item.getHaPrice());
+
+            String tooltip = new StringBuilder()
+                    .append(item.getName())
+                    .append("\n")
+                    .append("GE: ").append(gePrice)
+                    .append("\n")
+                    .append("HA: ").append(haPrice)
+                    .toString();
+
+            icon.setToolTipText(tooltip);
+        });
+
+
     }
 
     public void clearEquipmentItem() {
