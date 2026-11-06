@@ -4,12 +4,14 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemComposition;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.ui.PluginPanel;
 
 import javax.swing.*;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import java.awt.*;
+import java.awt.event.ItemEvent;
 import java.util.List;
 
 @Slf4j
@@ -22,6 +24,15 @@ public class PlayerInspectorLayout {
      * cached list of users that meant to be updated, but popup was visible
      */
     private List<String> pendingUpdate = null;
+
+    /**
+     * Controls if PlayerSelectedEvent should be fired or not.
+     * A "Selected" event coming from Combobox is the one triggering the update event
+     * but is being surpressed if manual selection is performed
+     */
+    private boolean suppressEventPost = false;
+
+    private final EventBus bus;
 
     private final EquipmentSlot head;
     private final EquipmentSlot cape;
@@ -36,7 +47,9 @@ public class PlayerInspectorLayout {
     private final EquipmentSlot ring;
 
     @Inject
-    public PlayerInspectorLayout(EquipmentSlotFactory equipmentSlotFactory) {
+    public PlayerInspectorLayout(EquipmentSlotFactory equipmentSlotFactory, EventBus bus) {
+        this.bus = bus;
+
         this.head = equipmentSlotFactory.create(EquipmentSlot.Type.Head);
         this.cape = equipmentSlotFactory.create(EquipmentSlot.Type.Cape);
         this.amulet = equipmentSlotFactory.create(EquipmentSlot.Type.Amulet);
@@ -62,7 +75,7 @@ public class PlayerInspectorLayout {
 
         panel.add(createEquipmentPanel());
 
-        setUpPopupClosedListener();
+        setUpPlayerSelectorListeners();
 
         // todo: add buttons that links to DPS page
 
@@ -83,13 +96,17 @@ public class PlayerInspectorLayout {
 
 
     public void setSelected(String playerName) {
-        int index = playerSelectorModel.getIndexOf(playerName);
-        if (index >= 0) {
+        boolean present = playerName != null && playerSelectorModel.getIndexOf(playerName) >= 0;
+
+        if (present) {
             playerSelector.setSelectedItem(playerName);
+        } else {
+            playerSelector.setSelectedItem(null);
         }
+
     }
 
-    public void setPlayers(List<String> players) {
+    public void updateAvailablePlayerList(List<String> players) {
         // do not set players when popup is visible
         if (playerSelector.isPopupVisible()) {
             pendingUpdate = players;
@@ -100,17 +117,34 @@ public class PlayerInspectorLayout {
     }
 
     private void updatePlayerModel(List<String> players) {
-        String selected = (String) playerSelector.getSelectedItem();
-        playerSelector.setSelectedItem(null);
-        playerSelectorModel.removeAllElements();
-        playerSelectorModel.addAll(players);
+        // avoid endless loop
+        suppressEventPost = true;
 
-        if (selected != null && players.contains(selected)) {
-            playerSelector.setSelectedItem(selected);
+        try {
+            String selected = (String) playerSelector.getSelectedItem();
+            playerSelector.setSelectedItem(null);
+            playerSelectorModel.removeAllElements();
+            playerSelectorModel.addAll(players);
+
+            // note: do not send event about selection here - this is internal swap of player list
+            if (selected != null && players.contains(selected)) {
+                playerSelector.setSelectedItem(selected);
+            }
+        } finally {
+            suppressEventPost = false;
         }
     }
 
-    private void setUpPopupClosedListener() {
+    private void setUpPlayerSelectorListeners() {
+        playerSelector.addItemListener(e -> {
+            if (e.getStateChange() != ItemEvent.SELECTED || suppressEventPost) {
+                return;
+            }
+
+            String selected = (String) e.getItem();
+            bus.post(new PlayerSelectedEvent(selected));
+        });
+
         playerSelector.addPopupMenuListener(new PopupMenuListener() {
             @Override
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {

@@ -3,6 +3,7 @@ package com.playerinspector.panel.layout;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.playerinspector.utils.Threads;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 

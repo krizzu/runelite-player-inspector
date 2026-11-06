@@ -23,9 +23,9 @@ public class EquipmentSlot extends JPanel {
     public Type type;
     private JLabel icon = createLabel();
 
-    private SpriteManager sprites;
-    private ItemManager items;
-    private Threads threads;
+    private final SpriteManager sprites;
+    private final ItemManager items;
+    private final Threads threads;
 
     // an icon of a slot itself, when empty. Buffered after init.
     private BufferedImage emptyImage;

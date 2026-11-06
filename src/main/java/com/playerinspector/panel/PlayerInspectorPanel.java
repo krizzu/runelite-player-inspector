@@ -4,13 +4,12 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.playerinspector.panel.layout.EquipmentSlot;
 import com.playerinspector.panel.layout.PlayerInspectorLayout;
+import com.playerinspector.panel.layout.PlayerSelectedEvent;
 import com.playerinspector.tracker.NearbyPlayerTracker;
 import com.playerinspector.tracker.NearbyPlayerTrackerUpdate;
 import com.playerinspector.utils.Threads;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.ItemComposition;
-import net.runelite.api.Player;
-import net.runelite.api.PlayerComposition;
+import net.runelite.api.*;
 import net.runelite.api.kit.KitType;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -29,18 +28,19 @@ public class PlayerInspectorPanel extends PluginPanel {
     private final Threads threads;
     private final NearbyPlayerTracker tracker;
     private final EventBus bus;
-
+    private final Client client;
 
     private NavigationButton navButton;
 
     @Inject
-    public PlayerInspectorPanel(ClientToolbar toolbar, ItemManager itemManager, PlayerInspectorLayout layout, Threads threads, NearbyPlayerTracker tracker, EventBus bus) {
+    public PlayerInspectorPanel(ClientToolbar toolbar, ItemManager itemManager, Client client, PlayerInspectorLayout layout, Threads threads, NearbyPlayerTracker tracker, EventBus bus) {
         this.toolbar = toolbar;
         this.itemManager = itemManager;
         this.layout = layout;
         this.threads = threads;
         this.tracker = tracker;
         this.bus = bus;
+        this.client = client;
     }
 
 
@@ -85,22 +85,55 @@ public class PlayerInspectorPanel extends PluginPanel {
     public void openPanel(Player player) {
         threads.onEdt(() -> {
             toolbar.openPanel(navButton);
-            layout.setPlayers(tracker.getPlayers());
+            layout.updateAvailablePlayerList(tracker.getPlayers());
             if (player != null) {
                 layout.setSelected(player.getName());
             }
         });
+    }
 
-        threads.onClient(() ->
-                showEquipment(player)
-        );
+
+    @Subscribe
+    private void onPlayerSelectedEvent(PlayerSelectedEvent selected) {
+        log.info("New player selected: " + selected.getPlayerName());
+        String name = selected.getPlayerName();
+        if (name == null) {
+            return;
+        }
+
+        threads.onClient(() -> {
+            Player player = findPlayerByName(name);
+            if (player != null) {
+                showEquipment(player);
+            }
+        });
+
     }
 
     @Subscribe
     private void onNearbyPlayerTrackerUpdate(NearbyPlayerTrackerUpdate update) {
         threads.onEdt(() -> {
-            layout.setPlayers(update.getPlayers());
+            layout.updateAvailablePlayerList(update.getPlayers());
         });
+    }
+
+    private Player findPlayerByName(String playerName) {
+        if (client.getGameState() != GameState.LOGGED_IN) {
+            return null;
+        }
+
+        Player local = client.getLocalPlayer();
+        if (playerName.equals(local.getName())) {
+            return local;
+        }
+
+        for (Player player : client.getTopLevelWorldView().players()) {
+            if (playerName.equals(player.getName())) {
+                return player;
+            }
+        }
+
+        return null;
     }
 
     private EquipmentSlot.Type kitTypeToSlot(KitType kit) {
