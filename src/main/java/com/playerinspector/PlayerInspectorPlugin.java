@@ -3,6 +3,7 @@ package com.playerinspector;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.playerinspector.panel.PlayerInspectorPanel;
+import com.playerinspector.tracker.NearbyPlayerTracker;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.MenuEntry;
@@ -35,6 +36,9 @@ public class PlayerInspectorPlugin extends Plugin {
 
     @Inject
     private PlayerInspectorPanel panel;
+
+    @Inject
+    private NearbyPlayerTracker tracker;
 
     @Override
     protected void startUp() throws Exception {
