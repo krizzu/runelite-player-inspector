@@ -9,7 +9,15 @@ import com.playerinspector.tracker.NearbyPlayerTracker;
 import com.playerinspector.tracker.NearbyPlayerTrackerUpdate;
 import com.playerinspector.utils.Threads;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.*;
+import net.runelite.api.Client;
+import net.runelite.api.EquipmentInventorySlot;
+import net.runelite.api.GameState;
+import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.Item;
+import net.runelite.api.ItemComposition;
+import net.runelite.api.ItemContainer;
+import net.runelite.api.Player;
+import net.runelite.api.PlayerComposition;
 import net.runelite.api.kit.KitType;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -57,29 +65,14 @@ public class PlayerInspectorPanel extends PluginPanel {
     }
 
     public void showEquipment(Player player) {
-        PlayerComposition comp = player.getPlayerComposition();
-        for (KitType kitType : KitType.values()) {
-            EquipmentSlot.Type slotType = kitTypeToSlot(kitType);
-            // todo: for local player, need to map ring and ammo!
-            if (slotType == null) {
-                continue;
-            }
+        Player localPlayer = client.getLocalPlayer();
+        boolean isLocal = localPlayer == player;
 
-            int eqId = comp.getEquipmentId(kitType);
-            ItemComposition item = itemManager.getItemComposition(eqId);
-
-            if (item == null) {
-                continue;
-            }
-
-            boolean isItem = eqId > 0;
-            if (!isItem) {
-                layout.clearEquipmentItem(slotType);
-            } else {
-                layout.setEquipmentItem(slotType, item);
-            }
+        if (isLocal) {
+            showLocalPlayerEquipment();
+        } else {
+            showPlayerEquipment(player);
         }
-
     }
 
     public void openPanel(Player player) {
@@ -93,9 +86,69 @@ public class PlayerInspectorPanel extends PluginPanel {
     }
 
 
+    // note: think about supporting Stackable items (arrows, etc) for better display
+    private void showLocalPlayerEquipment() {
+        ItemContainer worn = client.getItemContainer(InventoryID.WORN);
+
+        if (worn == null) {
+            // clear just in case
+            clearAllSlots();
+            return;
+        }
+
+        for (EquipmentInventorySlot inv : EquipmentInventorySlot.values()) {
+            EquipmentSlot.Type slotType = equipmentInventoryIdToSlot(inv);
+            if (slotType == null) {
+                continue;
+            }
+
+            Item item = worn.getItem(inv.getSlotIdx());
+            if (item == null) {
+                layout.clearEquipmentItem(slotType);
+            } else {
+                ItemComposition comp = itemManager.getItemComposition(item.getId());
+                layout.setEquipmentItem(slotType, comp);
+            }
+        }
+
+    }
+
+    private void showPlayerEquipment(Player player) {
+        PlayerComposition comp = player.getPlayerComposition();
+
+        // clear local player's ring and arrows, non-existing for other players
+        layout.clearEquipmentItem(EquipmentSlot.Type.Ammo);
+        layout.clearEquipmentItem(EquipmentSlot.Type.Ring);
+
+        for (KitType kitType : KitType.values()) {
+            EquipmentSlot.Type slotType = kitTypeToSlot(kitType);
+            if (slotType == null) {
+                continue;
+            }
+
+            int eqId = comp.getEquipmentId(kitType);
+            boolean isItem = eqId > 0;
+
+            if (!isItem) {
+                layout.clearEquipmentItem(slotType);
+            } else {
+                ItemComposition item = itemManager.getItemComposition(eqId);
+                layout.setEquipmentItem(slotType, item);
+            }
+        }
+
+
+    }
+
+    private void clearAllSlots() {
+        for (EquipmentSlot.Type type : EquipmentSlot.Type.values()) {
+            layout.clearEquipmentItem(type);
+        }
+    }
+
+
     @Subscribe
     private void onPlayerSelectedEvent(PlayerSelectedEvent selected) {
-        log.info("New player selected: " + selected.getPlayerName());
         String name = selected.getPlayerName();
         if (name == null) {
             return;
@@ -123,6 +176,10 @@ public class PlayerInspectorPanel extends PluginPanel {
         }
 
         Player local = client.getLocalPlayer();
+        if (local == null) {
+            return null;
+        }
+
         if (playerName.equals(local.getName())) {
             return local;
         }
@@ -134,6 +191,35 @@ public class PlayerInspectorPanel extends PluginPanel {
         }
 
         return null;
+    }
+
+    private EquipmentSlot.Type equipmentInventoryIdToSlot(EquipmentInventorySlot inv) {
+        switch (inv) {
+            case HEAD:
+                return EquipmentSlot.Type.Head;
+            case CAPE:
+                return EquipmentSlot.Type.Cape;
+            case AMULET:
+                return EquipmentSlot.Type.Amulet;
+            case WEAPON:
+                return EquipmentSlot.Type.RightHand;
+            case BODY:
+                return EquipmentSlot.Type.Body;
+            case SHIELD:
+                return EquipmentSlot.Type.LeftHand;
+            case LEGS:
+                return EquipmentSlot.Type.Legs;
+            case GLOVES:
+                return EquipmentSlot.Type.Gloves;
+            case BOOTS:
+                return EquipmentSlot.Type.Boots;
+            case AMMO:
+                return EquipmentSlot.Type.Ammo;
+            case RING:
+                return EquipmentSlot.Type.Ring;
+            default:
+                return null;
+        }
     }
 
     private EquipmentSlot.Type kitTypeToSlot(KitType kit) {

@@ -145,7 +145,6 @@ public class PlayerInspectorLayout {
                 return;
             }
             String selected = (String) playerSelector.getSelectedItem();
-            log.info("Updating selection to " + selected);
             bus.post(new PlayerSelectedEvent(selected));
         });
 
