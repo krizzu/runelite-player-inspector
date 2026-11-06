@@ -4,55 +4,55 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.playerinspector.panel.layout.EquipmentSlot;
 import com.playerinspector.panel.layout.PlayerInspectorLayout;
+import com.playerinspector.tracker.NearbyPlayerTracker;
+import com.playerinspector.tracker.NearbyPlayerTrackerUpdate;
 import com.playerinspector.utils.Threads;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.Player;
 import net.runelite.api.PlayerComposition;
 import net.runelite.api.kit.KitType;
+import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
-import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.PluginPanel;
 
-import javax.swing.*;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 
-
+@Slf4j
+@Singleton
 public class PlayerInspectorPanel extends PluginPanel {
+    private final ClientToolbar toolbar;
+    private final ItemManager itemManager;
+    private final PlayerInspectorLayout layout;
+    private final Threads threads;
+    private final NearbyPlayerTracker tracker;
+    private final EventBus bus;
 
-    @Inject
-    private ClientToolbar toolbar;
-
-    @Inject
-    private NavButtonManager navManager;
-
-    @Inject
-    private SpriteManager spriteManager;
-
-    @Inject
-    private ItemManager itemManager;
-
-    @Inject
-    private PlayerInspectorLayout layout;
-
-    @Inject
-    private Threads threads;
 
     private NavigationButton navButton;
 
-
-    public PlayerInspectorPanel() {
+    @Inject
+    public PlayerInspectorPanel(ClientToolbar toolbar, ItemManager itemManager, PlayerInspectorLayout layout, Threads threads, NearbyPlayerTracker tracker, EventBus bus) {
+        this.toolbar = toolbar;
+        this.itemManager = itemManager;
+        this.layout = layout;
+        this.threads = threads;
+        this.tracker = tracker;
+        this.bus = bus;
     }
 
+
     public void init() {
-        navButton = navManager.create(this);
-        layout.init(this);
+        bus.register(this);
+        navButton = NavButtonFactory.create(this);
         toolbar.addNavigation(navButton);
+        layout.init(this);
     }
 
     public void deinit() {
+        bus.unregister(this);
         toolbar.removeNavigation(navButton);
     }
 
@@ -83,18 +83,24 @@ public class PlayerInspectorPanel extends PluginPanel {
     }
 
     public void openPanel(Player player) {
-        try {
-            threads.onEdtAwait(() -> {
-                toolbar.openPanel(navButton);
-                if (player != null) {
-                    layout.setSelected(player.getName());
-                }
-            });
-            // needs to run on client thread
-        } catch (InterruptedException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
-        showEquipment(player);
+        threads.onEdt(() -> {
+            toolbar.openPanel(navButton);
+            layout.setPlayers(tracker.getPlayers());
+            if (player != null) {
+                layout.setSelected(player.getName());
+            }
+        });
+
+        threads.onClient(() ->
+                showEquipment(player)
+        );
+    }
+
+    @Subscribe
+    private void onNearbyPlayerTrackerUpdate(NearbyPlayerTrackerUpdate update) {
+        threads.onEdt(() -> {
+            layout.setPlayers(update.getPlayers());
+        });
     }
 
     private EquipmentSlot.Type kitTypeToSlot(KitType kit) {
@@ -126,6 +132,5 @@ public class PlayerInspectorPanel extends PluginPanel {
                 throw new IllegalArgumentException("Unknown KitType: " + kit);
         }
     }
-
 }
 

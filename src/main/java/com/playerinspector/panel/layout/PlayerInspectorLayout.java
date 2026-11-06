@@ -6,11 +6,12 @@ import net.runelite.client.ui.PluginPanel;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.List;
 
 
 public class PlayerInspectorLayout {
-    private final JComboBox<String> playerSelector = new JComboBox<>();
+    private final DefaultComboBoxModel<String> playerSelectorModel = new DefaultComboBoxModel<>();
+    private final JComboBox<String> playerSelector = new JComboBox<>(playerSelectorModel);
 
     private final EquipmentSlot head;
     private final EquipmentSlot cape;
@@ -56,30 +57,33 @@ public class PlayerInspectorLayout {
 
 
     public void setSelected(String playerName) {
-        DefaultComboBoxModel<String> model = (DefaultComboBoxModel<String>) playerSelector.getModel();
-        int index = model.getIndexOf(playerName);
+        int index = playerSelectorModel.getIndexOf(playerName);
         if (index >= 0) {
             playerSelector.setSelectedItem(playerName);
         }
     }
 
-    public void setPlayers(ArrayList<String> players) {
-        String[] playersArray = new String[players.size()];
-        playersArray = players.toArray(playersArray);
-        String selected = (String) playerSelector.getSelectedItem();
-        DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>(playersArray);
+    public void setPlayers(List<String> players) {
+        // do not set players when popup is visible
+        if (playerSelector.isPopupVisible()) {
+            return;
+        }
 
-        playerSelector.setModel(model);
-        if (players.contains(selected)) {
+        String selected = (String) playerSelector.getSelectedItem();
+        playerSelector.setSelectedItem(null);
+        playerSelectorModel.removeAllElements();
+        playerSelectorModel.addAll(players);
+
+        if (selected != null && players.contains(selected)) {
             playerSelector.setSelectedItem(selected);
         }
     }
 
     public void setEquipmentItem(EquipmentSlot.Type slot, ItemComposition item) {
         EquipmentSlot eq = selectEquipmentSlot(slot);
-        SwingUtilities.invokeLater(() -> {
-            eq.setEquipmentItem(item);
-        });
+        SwingUtilities.invokeLater(() ->
+                eq.setEquipmentItem(item)
+        );
     }
 
     public void clearEquipmentItem(EquipmentSlot.Type slot) {

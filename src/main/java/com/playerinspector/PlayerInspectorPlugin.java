@@ -34,16 +34,21 @@ public class PlayerInspectorPlugin extends Plugin {
     @Inject
     private Client client;
 
-    @Inject
+    // note: do not inject this here, but in constructor
     private PlayerInspectorPanel panel;
 
     @Inject
     private NearbyPlayerTracker tracker;
 
+
     @Override
     protected void startUp() throws Exception {
         log.info("Player Inspector started!");
         addMenuEntry();
+        tracker.init();
+        tracker.seed();
+
+        // inject here, so that Swing's EDT thread is used (layout style is applied here)
         panel = injector.getInstance(PlayerInspectorPanel.class);
         panel.init();
     }
@@ -53,6 +58,7 @@ public class PlayerInspectorPlugin extends Plugin {
         log.info("Player Inspector stopped!");
         removeMenuEntry();
         panel.deinit();
+        tracker.deinit();
     }
 
     @Provides
