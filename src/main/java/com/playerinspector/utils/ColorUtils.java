@@ -1,8 +1,10 @@
 package com.playerinspector.utils;
 
+import net.runelite.client.util.*;
+
 import java.awt.*;
 
-public class GeValueColors {
+public class ColorUtils {
 
     private static final Color defaultColor = Color.decode("#FFFFFF");
     private static final Color low = Color.decode("#4EF5FF");
@@ -28,6 +30,10 @@ public class GeValueColors {
         } else {
             return defaultColor;
         }
+    }
+
+    public static String getColorForValueHex(long value) {
+        return ColorUtil.toHexColor(getColorForValue(value));
     }
 
 }

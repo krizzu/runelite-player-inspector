@@ -108,7 +108,7 @@ public class PlayerInspectorLayout {
                 return;
             }
 
-            totalGe.setForeground(GeValueColors.getColorForValue(value));
+            totalGe.setForeground(ColorUtils.getColorForValue(value));
             totalGe.setText(QuantityFormatter.formatNumber(value) + "gp");
         });
     }

@@ -69,15 +69,18 @@ public class EquipmentSlot extends JPanel {
         });
 
         threads.onClient(() -> {
-            String gePrice = QuantityFormatter.formatNumber(items.getItemPrice(item.getId()));
-            String haPrice = QuantityFormatter.formatNumber(item.getHaPrice());
+            long ge = items.getItemPrice(item.getId());
+            long ha = item.getHaPrice();
+            String gePrice = QuantityFormatter.formatNumber(ge);
+            String haPrice = QuantityFormatter.formatNumber(ha);
+
 
             String tooltip = new StringBuilder()
-                    .append(item.getName())
-                    .append("\n")
-                    .append("GE: ").append(gePrice).append("gp")
-                    .append("\n")
-                    .append("HA: ").append(haPrice).append("gp")
+                    .append("<html>")
+                    .append(item.getName()).append("<br>")
+                    .append("GE: ").append("<font color='" + ColorUtils.getColorForValueHex(ge) + "'>").append(gePrice).append("gp</font>").append("<br>")
+                    .append("HA: ").append("<font color='" + ColorUtils.getColorForValueHex(ha) + "'>").append(haPrice).append("gp</font>").append("<br>")
+                    .append("</html>")
                     .toString();
 
             icon.setToolTipText(tooltip);
