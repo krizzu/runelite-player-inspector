@@ -28,7 +28,6 @@ import net.runelite.client.ui.PluginPanel;
 
 
 @Slf4j
-@Singleton
 public class PlayerInspectorPanel extends PluginPanel {
     private final ClientToolbar toolbar;
     private final ItemManager itemManager;

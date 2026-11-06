@@ -16,7 +16,6 @@ import java.awt.*;
 import java.util.List;
 
 @Slf4j
-@Singleton
 public class PlayerInspectorLayout {
     private final DefaultComboBoxModel<String> playerSelectorModel = new DefaultComboBoxModel<>();
     private final JComboBox<String> playerSelector = new JComboBox<>(playerSelectorModel);
