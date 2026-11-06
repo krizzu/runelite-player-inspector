@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.playerinspector.panel.layout.EquipmentSlot;
 import com.playerinspector.panel.layout.PlayerInspectorLayout;
+import com.playerinspector.utils.Threads;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.Player;
 import net.runelite.api.PlayerComposition;
@@ -16,6 +17,7 @@ import net.runelite.client.ui.PluginPanel;
 
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 
 
 public class PlayerInspectorPanel extends PluginPanel {
@@ -35,6 +37,9 @@ public class PlayerInspectorPanel extends PluginPanel {
     @Inject
     private PlayerInspectorLayout layout;
 
+    @Inject
+    private Threads threads;
+
     private NavigationButton navButton;
 
 
@@ -51,9 +56,7 @@ public class PlayerInspectorPanel extends PluginPanel {
         toolbar.removeNavigation(navButton);
     }
 
-
     public void showEquipment(Player player) {
-
         PlayerComposition comp = player.getPlayerComposition();
         for (KitType kitType : KitType.values()) {
             EquipmentSlot.Type slotType = kitTypeToSlot(kitType);
@@ -79,23 +82,20 @@ public class PlayerInspectorPanel extends PluginPanel {
 
     }
 
-
     public void openPanel(Player player) {
         try {
-            SwingUtilities.invokeAndWait(() -> {
-                        toolbar.openPanel(navButton);
-                        if (player != null) {
-                            layout.setSearch(player.getName());
-                        }
-                    }
-            );
+            threads.onEdtAwait(() -> {
+                toolbar.openPanel(navButton);
+                if (player != null) {
+                    layout.setSelected(player.getName());
+                }
+            });
             // needs to run on client thread
-            showEquipment(player);
         } catch (InterruptedException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
+        showEquipment(player);
     }
-
 
     private EquipmentSlot.Type kitTypeToSlot(KitType kit) {
         switch (kit) {

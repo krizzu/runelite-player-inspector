@@ -38,8 +38,6 @@ public class NearbyPlayerTracker {
         this.players.clear();
         this.players = names.collect(Collectors.toList());
 
-        log.info("player count: " + this.players.size());
-
         return this.players;
     }
 

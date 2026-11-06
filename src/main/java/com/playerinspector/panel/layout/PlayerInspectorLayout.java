@@ -6,11 +6,11 @@ import net.runelite.client.ui.PluginPanel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 
 
 public class PlayerInspectorLayout {
-    private final JTextField searchInput = new JTextField();
-    private final JButton searchButton = new JButton("search");
+    private final JComboBox<String> playerSelector = new JComboBox<>();
 
     private final EquipmentSlot head;
     private final EquipmentSlot cape;
@@ -44,7 +44,7 @@ public class PlayerInspectorLayout {
         // padding of 10px
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        panel.add(createSearchPanel());
+        panel.add(createSelectPanel());
 
         // padding
         panel.add(Box.createVerticalStrut(10));
@@ -55,8 +55,24 @@ public class PlayerInspectorLayout {
     }
 
 
-    public void setSearch(String text) {
-        searchInput.setText(text);
+    public void setSelected(String playerName) {
+        DefaultComboBoxModel<String> model = (DefaultComboBoxModel<String>) playerSelector.getModel();
+        int index = model.getIndexOf(playerName);
+        if (index >= 0) {
+            playerSelector.setSelectedItem(playerName);
+        }
+    }
+
+    public void setPlayers(ArrayList<String> players) {
+        String[] playersArray = new String[players.size()];
+        playersArray = players.toArray(playersArray);
+        String selected = (String) playerSelector.getSelectedItem();
+        DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>(playersArray);
+
+        playerSelector.setModel(model);
+        if (players.contains(selected)) {
+            playerSelector.setSelectedItem(selected);
+        }
     }
 
     public void setEquipmentItem(EquipmentSlot.Type slot, ItemComposition item) {
@@ -71,11 +87,10 @@ public class PlayerInspectorLayout {
         SwingUtilities.invokeLater(eq::clearEquipmentItem);
     }
 
-    private JPanel createSearchPanel() {
+    private JPanel createSelectPanel() {
         JPanel container = new JPanel();
-        container.setLayout(new BorderLayout(5, 0));
-        container.add(searchInput, BorderLayout.CENTER);
-        container.add(searchButton, BorderLayout.EAST);
+        container.setLayout(new BorderLayout(0, 0));
+        container.add(playerSelector, BorderLayout.CENTER);
         return container;
     }
 
