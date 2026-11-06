@@ -10,7 +10,7 @@ import java.awt.image.BufferedImage;
 @Singleton
 public class NavButtonFactory {
 
-    private static final BufferedImage icon = ImageUtil.loadImageResource(NavButtonFactory.class, "magnifying_glass.png");
+    private static final BufferedImage icon = ImageUtil.loadImageResource(NavButtonFactory.class, "worn_equipment.png");
 
     public static NavigationButton create(PlayerInspectorPanel panel) {
         return NavigationButton.builder()
