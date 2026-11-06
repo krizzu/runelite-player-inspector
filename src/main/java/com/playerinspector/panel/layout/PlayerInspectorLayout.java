@@ -2,18 +2,26 @@ package com.playerinspector.panel.layout;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemComposition;
 import net.runelite.client.ui.PluginPanel;
 
 import javax.swing.*;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import java.awt.*;
 import java.util.List;
 
-
+@Slf4j
 @Singleton
 public class PlayerInspectorLayout {
     private final DefaultComboBoxModel<String> playerSelectorModel = new DefaultComboBoxModel<>();
     private final JComboBox<String> playerSelector = new JComboBox<>(playerSelectorModel);
+
+    /**
+     * cached list of users that meant to be updated, but popup was visible
+     */
+    private List<String> pendingUpdate = null;
 
     private final EquipmentSlot head;
     private final EquipmentSlot cape;
@@ -54,7 +62,23 @@ public class PlayerInspectorLayout {
 
         panel.add(createEquipmentPanel());
 
+        setUpPopupClosedListener();
+
         // todo: add buttons that links to DPS page
+
+
+    }
+
+    public void setEquipmentItem(EquipmentSlot.Type slot, ItemComposition item) {
+        EquipmentSlot eq = selectEquipmentSlot(slot);
+        SwingUtilities.invokeLater(() ->
+                eq.setEquipmentItem(item)
+        );
+    }
+
+    public void clearEquipmentItem(EquipmentSlot.Type slot) {
+        EquipmentSlot eq = selectEquipmentSlot(slot);
+        SwingUtilities.invokeLater(eq::clearEquipmentItem);
     }
 
 
@@ -68,9 +92,14 @@ public class PlayerInspectorLayout {
     public void setPlayers(List<String> players) {
         // do not set players when popup is visible
         if (playerSelector.isPopupVisible()) {
+            pendingUpdate = players;
             return;
         }
 
+        updatePlayerModel(players);
+    }
+
+    private void updatePlayerModel(List<String> players) {
         String selected = (String) playerSelector.getSelectedItem();
         playerSelector.setSelectedItem(null);
         playerSelectorModel.removeAllElements();
@@ -81,16 +110,33 @@ public class PlayerInspectorLayout {
         }
     }
 
-    public void setEquipmentItem(EquipmentSlot.Type slot, ItemComposition item) {
-        EquipmentSlot eq = selectEquipmentSlot(slot);
-        SwingUtilities.invokeLater(() ->
-                eq.setEquipmentItem(item)
-        );
-    }
+    private void setUpPopupClosedListener() {
+        playerSelector.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+                if (pendingUpdate != null) {
+                    List<String> update = pendingUpdate;
+                    log.info("Updating pending updates lol");
+                    pendingUpdate = null;
 
-    public void clearEquipmentItem(EquipmentSlot.Type slot) {
-        EquipmentSlot eq = selectEquipmentSlot(slot);
-        SwingUtilities.invokeLater(eq::clearEquipmentItem);
+                    // could use Threads.onEdt, but that'd be an overkill for DI
+                    SwingUtilities.invokeLater(() ->
+                            updatePlayerModel(update)
+                    );
+                }
+            }
+
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                // noop
+            }
+
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {
+                // noop
+            }
+        });
     }
 
     private JPanel createSelectPanel() {
@@ -144,8 +190,8 @@ public class PlayerInspectorLayout {
 
     private GridBagConstraints createEquipmentBoxConstraint(EquipmentSlot.Type slot) {
         GridBagConstraints c = new GridBagConstraints();
-        int x = -1;
-        int y = -1;
+        int x;
+        int y;
 
         switch (slot) {
             case Head:
