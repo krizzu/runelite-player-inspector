@@ -12,7 +12,6 @@ import javax.swing.*;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import java.awt.*;
-import java.awt.event.ItemEvent;
 import java.util.List;
 
 @Slf4j
@@ -139,12 +138,14 @@ public class PlayerInspectorLayout {
     }
 
     private void setUpPlayerSelectorListeners() {
-        playerSelector.addItemListener(e -> {
-            if (e.getStateChange() != ItemEvent.SELECTED || suppressEventPost) {
+
+        // using actionListener instead of addItemListener makes reselecting same player "refresh" it
+        playerSelector.addActionListener(e -> {
+            if (suppressEventPost) {
                 return;
             }
-
-            String selected = (String) e.getItem();
+            String selected = (String) playerSelector.getSelectedItem();
+            log.info("Updating selection to " + selected);
             bus.post(new PlayerSelectedEvent(selected));
         });
 
@@ -153,7 +154,6 @@ public class PlayerInspectorLayout {
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
                 if (pendingUpdate != null) {
                     List<String> update = pendingUpdate;
-                    log.info("Updating pending updates lol");
                     pendingUpdate = null;
 
                     threads.onEdt(() ->
