@@ -17,7 +17,7 @@ import net.runelite.client.ui.PluginPanel;
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
 
-@Singleton
+
 public class PlayerInspectorPanel extends PluginPanel {
 
     @Inject
@@ -37,7 +37,7 @@ public class PlayerInspectorPanel extends PluginPanel {
 
     private NavigationButton navButton;
 
-    @Inject
+
     public PlayerInspectorPanel() {
     }
 
@@ -75,8 +75,6 @@ public class PlayerInspectorPanel extends PluginPanel {
             } else {
                 layout.setEquipmentItem(slotType, item);
             }
-
-
         }
 
     }

@@ -1,7 +1,5 @@
 package com.playerinspector.panel.layout;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import net.runelite.api.ItemComposition;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
@@ -21,10 +19,10 @@ public class EquipmentSlot extends JPanel {
         Head, Cape, Amulet, Ammo, RightHand, Body, LeftHand, Legs, Gloves, Boots, Ring
     }
 
+    private final Dimension preferredDims = new Dimension(36, 36);
     public Type type;
     private JLabel icon = createLabel();
 
-    private Dimension preferredDims = new Dimension(36, 36);
     private SpriteManager sprites;
     private ItemManager items;
     private ClientThread clientThread;
@@ -63,6 +61,8 @@ public class EquipmentSlot extends JPanel {
         img.onLoaded(() -> {
             img.addTo(icon);
             centerLabel(icon);
+            // todo: dunno why, but eq sprites are not centered - by 4px.
+            icon.setBorder(BorderFactory.createEmptyBorder(0, 4, 0 ,0));
         });
 
 
@@ -91,6 +91,7 @@ public class EquipmentSlot extends JPanel {
 
         icon.setIcon(new ImageIcon(emptyImage));
         icon.setToolTipText("");
+        icon.setBorder(null);
     }
 
 

@@ -46,6 +46,7 @@ public class PlayerInspectorLayout {
 
         panel.add(createSearchPanel());
 
+        // padding
         panel.add(Box.createVerticalStrut(10));
 
         panel.add(createEquipmentPanel());
