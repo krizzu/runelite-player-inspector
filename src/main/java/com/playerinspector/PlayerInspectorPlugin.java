@@ -21,8 +21,8 @@ import java.util.Objects;
 @Slf4j
 @PluginDescriptor(
         name = "Player Inspector",
-        description = "Inspect other players' equipment",
-        tags = {"players", "equipment", "gear", "inspect", "stats", "skills", "dps"}
+        description = "Inspect the equipment of nearby players",
+        tags = {"players", "equipment", "gear", "inspect", "ge", "ha"}
 )
 public class PlayerInspectorPlugin extends Plugin {
     @Inject
