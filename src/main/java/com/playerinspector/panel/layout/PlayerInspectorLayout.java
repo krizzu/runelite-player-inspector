@@ -2,11 +2,12 @@ package com.playerinspector.panel.layout;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.playerinspector.utils.Threads;
+import com.playerinspector.utils.*;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemComposition;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.ui.PluginPanel;
+import net.runelite.client.util.*;
 
 import javax.swing.*;
 import javax.swing.event.PopupMenuEvent;
@@ -19,6 +20,7 @@ import java.util.List;
 public class PlayerInspectorLayout {
     private final DefaultComboBoxModel<String> playerSelectorModel = new DefaultComboBoxModel<>();
     private final JComboBox<String> playerSelector = new JComboBox<>(playerSelectorModel);
+    private final JLabel totalGe = new JLabel("-");
 
     /**
      * cached list of users that meant to be updated, but popup was visible
@@ -74,14 +76,16 @@ public class PlayerInspectorLayout {
 
         // padding
         panel.add(Box.createVerticalStrut(10));
-
         panel.add(createEquipmentPanel());
 
-        setUpPlayerSelectorListeners();
+
+        // padding
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(createGeTotalPanel());
+
 
         // todo: add buttons that links to DPS page
-
-
+        setUpPlayerSelectorListeners();
     }
 
     public void setEquipmentItem(EquipmentSlot.Type slot, ItemComposition item) {
@@ -96,6 +100,18 @@ public class PlayerInspectorLayout {
         threads.onEdt(eq::clearEquipmentItem);
     }
 
+    public void setTotalGeValue(long value) {
+        threads.onEdt(() -> {
+            if (value <= 0) {
+                totalGe.setForeground(Color.GRAY);
+                totalGe.setText("-");
+                return;
+            }
+
+            totalGe.setForeground(GeValueColors.getColorForValue(value));
+            totalGe.setText(QuantityFormatter.formatNumber(value) + "gp");
+        });
+    }
 
     public void setSelected(String playerName) {
         boolean present = playerName != null && playerSelectorModel.getIndexOf(playerName) >= 0;
@@ -191,6 +207,13 @@ public class PlayerInspectorLayout {
             container.add(eq, constraints);
         }
 
+        return container;
+    }
+
+    private JPanel createGeTotalPanel() {
+        JPanel container = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        container.add(new JLabel(("Total GE:")));
+        container.add(totalGe);
         return container;
     }
 

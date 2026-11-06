@@ -96,6 +96,7 @@ public class PlayerInspectorPanel extends PluginPanel {
             return;
         }
 
+        long total = 0;
         for (EquipmentInventorySlot inv : EquipmentInventorySlot.values()) {
             EquipmentSlot.Type slotType = equipmentInventoryIdToSlot(inv);
             if (slotType == null) {
@@ -108,9 +109,11 @@ public class PlayerInspectorPanel extends PluginPanel {
             } else {
                 ItemComposition comp = itemManager.getItemComposition(item.getId());
                 layout.setEquipmentItem(slotType, comp);
+                total += itemManager.getItemPrice(item.getId());
             }
         }
 
+        layout.setTotalGeValue(total);
     }
 
     private void showPlayerEquipment(Player player) {
@@ -120,6 +123,7 @@ public class PlayerInspectorPanel extends PluginPanel {
         layout.clearEquipmentItem(EquipmentSlot.Type.Ammo);
         layout.clearEquipmentItem(EquipmentSlot.Type.Ring);
 
+        long total = 0;
         for (KitType kitType : KitType.values()) {
             EquipmentSlot.Type slotType = kitTypeToSlot(kitType);
             if (slotType == null) {
@@ -133,19 +137,20 @@ public class PlayerInspectorPanel extends PluginPanel {
                 layout.clearEquipmentItem(slotType);
             } else {
                 ItemComposition item = itemManager.getItemComposition(eqId);
+                total += itemManager.getItemPrice(eqId);
                 layout.setEquipmentItem(slotType, item);
             }
         }
 
-
+        layout.setTotalGeValue(total);
     }
 
     private void clearAllSlots() {
         for (EquipmentSlot.Type type : EquipmentSlot.Type.values()) {
             layout.clearEquipmentItem(type);
         }
+        layout.setTotalGeValue(0);
     }
-
 
     @Subscribe
     private void onPlayerSelectedEvent(PlayerSelectedEvent selected) {

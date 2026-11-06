@@ -60,7 +60,7 @@ public class EquipmentSlot extends JPanel {
         img.onLoaded(() -> {
             img.addTo(icon);
             centerLabel(icon);
-            // todo: dunno why, but eq sprites are not centered - by 4px.
+            // todo: dunno why, but eq sprites are not centered - offset by 4px.
             icon.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
         });
 
@@ -75,9 +75,9 @@ public class EquipmentSlot extends JPanel {
             String tooltip = new StringBuilder()
                     .append(item.getName())
                     .append("\n")
-                    .append("GE: ").append(gePrice)
+                    .append("GE: ").append(gePrice).append("gp")
                     .append("\n")
-                    .append("HA: ").append(haPrice)
+                    .append("HA: ").append(haPrice).append("gp")
                     .toString();
 
             icon.setToolTipText(tooltip);
