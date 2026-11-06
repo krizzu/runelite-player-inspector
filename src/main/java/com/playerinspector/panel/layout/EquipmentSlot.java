@@ -1,11 +1,10 @@
 package com.playerinspector.panel.layout;
 
-import com.playerinspector.utils.Threads;
+import com.playerinspector.utils.*;
 import net.runelite.api.ItemComposition;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
-import net.runelite.client.util.AsyncBufferedImage;
-import net.runelite.client.util.QuantityFormatter;
+import net.runelite.client.util.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -43,7 +42,7 @@ public class EquipmentSlot extends JPanel {
         // add icon first, so it is shown on top of the background
         add(icon);
         loadSprite(getSpriteIndex(), bufferedImage -> {
-            // centers the icon
+            // cache empty item
             emptyImage = bufferedImage;
             icon.setIcon(new ImageIcon(bufferedImage));
             centerLabel(icon);
@@ -65,6 +64,9 @@ public class EquipmentSlot extends JPanel {
             icon.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
         });
 
+        threads.onClient(() -> {
+            setPopupMenuForItem(item);
+        });
 
         threads.onClient(() -> {
             String gePrice = QuantityFormatter.formatNumber(items.getItemPrice(item.getId()));
@@ -92,8 +94,26 @@ public class EquipmentSlot extends JPanel {
         icon.setIcon(new ImageIcon(emptyImage));
         icon.setToolTipText("");
         icon.setBorder(null);
+        setPopupMenuForItem(null);
     }
 
+    private void setPopupMenuForItem(ItemComposition item) {
+        if (item == null) {
+            setComponentPopupMenu(null);
+            return;
+        }
+
+        JPopupMenu popupMenu = new JPopupMenu();
+        JMenuItem wikiItem = new JMenuItem("Wiki");
+
+        wikiItem.addActionListener(e -> {
+            LinkBrowser.browse(WikiUrlBuilder.buildForItem(item).toString());
+        });
+
+        popupMenu.add(wikiItem);
+
+        setComponentPopupMenu(popupMenu);
+    }
 
     // https://abextm.github.io/cache2/#/viewer/sprite
     private int getSpriteIndex() {
