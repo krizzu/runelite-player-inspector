@@ -2,6 +2,7 @@ package com.playerinspector.panel.layout;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.playerinspector.utils.Threads;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemComposition;
 import net.runelite.client.eventbus.EventBus;
@@ -33,6 +34,7 @@ public class PlayerInspectorLayout {
     private boolean suppressEventPost = false;
 
     private final EventBus bus;
+    private final Threads threads;
 
     private final EquipmentSlot head;
     private final EquipmentSlot cape;
@@ -47,8 +49,9 @@ public class PlayerInspectorLayout {
     private final EquipmentSlot ring;
 
     @Inject
-    public PlayerInspectorLayout(EquipmentSlotFactory equipmentSlotFactory, EventBus bus) {
+    public PlayerInspectorLayout(EquipmentSlotFactory equipmentSlotFactory, EventBus bus, Threads threads) {
         this.bus = bus;
+        this.threads = threads;
 
         this.head = equipmentSlotFactory.create(EquipmentSlot.Type.Head);
         this.cape = equipmentSlotFactory.create(EquipmentSlot.Type.Cape);
@@ -84,14 +87,14 @@ public class PlayerInspectorLayout {
 
     public void setEquipmentItem(EquipmentSlot.Type slot, ItemComposition item) {
         EquipmentSlot eq = selectEquipmentSlot(slot);
-        SwingUtilities.invokeLater(() ->
+        threads.onEdt(() ->
                 eq.setEquipmentItem(item)
         );
     }
 
     public void clearEquipmentItem(EquipmentSlot.Type slot) {
         EquipmentSlot eq = selectEquipmentSlot(slot);
-        SwingUtilities.invokeLater(eq::clearEquipmentItem);
+        threads.onEdt(eq::clearEquipmentItem);
     }
 
 
@@ -153,8 +156,7 @@ public class PlayerInspectorLayout {
                     log.info("Updating pending updates lol");
                     pendingUpdate = null;
 
-                    // could use Threads.onEdt, but that'd be an overkill for DI
-                    SwingUtilities.invokeLater(() ->
+                    threads.onEdt(() ->
                             updatePlayerModel(update)
                     );
                 }
