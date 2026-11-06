@@ -1,6 +1,7 @@
 package com.playerinspector.panel.layout;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import net.runelite.api.ItemComposition;
 import net.runelite.client.ui.PluginPanel;
 
@@ -9,6 +10,7 @@ import java.awt.*;
 import java.util.List;
 
 
+@Singleton
 public class PlayerInspectorLayout {
     private final DefaultComboBoxModel<String> playerSelectorModel = new DefaultComboBoxModel<>();
     private final JComboBox<String> playerSelector = new JComboBox<>(playerSelectorModel);

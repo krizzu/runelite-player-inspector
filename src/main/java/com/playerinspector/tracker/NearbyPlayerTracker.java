@@ -2,7 +2,9 @@ package com.playerinspector.tracker;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.playerinspector.utils.Threads;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -17,23 +19,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+@Slf4j
 @Singleton
 public class NearbyPlayerTracker {
 
     private final Client client;
     private final EventBus bus;
+    private final Threads threads;
 
-    private List<String> players = new ArrayList<>();
+    @Getter
+    private volatile List<String> players = List.of();
 
     @Inject
-    public NearbyPlayerTracker(Client client, EventBus bus) {
+    public NearbyPlayerTracker(Client client, EventBus bus, Threads threads) {
         this.client = client;
         this.bus = bus;
-    }
-
-    public List<String> getPlayers() {
-        return new ArrayList<>(this.players);
+        this.threads = threads;
     }
 
     public void init() {
@@ -45,16 +48,26 @@ public class NearbyPlayerTracker {
     }
 
     // reset currently tracked list to players currently in vicinity
+    // runs on client thread
     public void seed() {
-        // get other players, filter out local one
-        List<String> names = client.getTopLevelWorldView().players().stream().map(Actor::getName).filter(Objects::nonNull).collect(Collectors.toList());
+        threads.onClient(() -> {
+            if (client.getGameState() != GameState.LOGGED_IN) {
+                return;
+            }
 
-        sendUpdateWithNewPlayers(names);
+            // get other players, filter out local one
+            List<String> names = client.getTopLevelWorldView().players().stream().map(Actor::getName).filter(Objects::nonNull).collect(Collectors.toList());
+
+            sendUpdateWithNewPlayers(names);
+        });
     }
 
+    //
     public void clear() {
-        this.players.clear();
-        sendEvent();
+        threads.onClient(() -> {
+            this.players = List.of();
+            sendEvent(this.players);
+        });
     }
 
 
@@ -66,8 +79,10 @@ public class NearbyPlayerTracker {
             return;
         }
 
-        players.add(name);
-        sendUpdateWithNewPlayers(players);
+        List<String> newList = new ArrayList<>();
+        newList.add(name);
+        newList.addAll(this.players);
+        sendUpdateWithNewPlayers(newList);
     }
 
     @Subscribe
@@ -76,9 +91,8 @@ public class NearbyPlayerTracker {
         if (name == null) {
             return;
         }
-
-        players.remove(name);
-        sendEvent();
+        List<String> newList = this.players.stream().filter(n -> !name.equals(n)).collect(Collectors.toList());
+        sendUpdateWithNewPlayers(newList);
     }
 
     @Subscribe
@@ -101,14 +115,23 @@ public class NearbyPlayerTracker {
     private void sendUpdateWithNewPlayers(List<String> newPlayers) {
         String localPlayerName = getPlayerNameOrNull(client.getLocalPlayer());
         if (localPlayerName == null) {
+            // todo: change this to debug once done
+            log.warn("No Local player, dropping update");
             return;
         }
 
-        List<String> all = new ArrayList<>(newPlayers).stream().filter(name -> !localPlayerName.equals(name)).distinct().collect(Collectors.toList());
-        all.add(0, localPlayerName);
-        this.players = all;
+        // put local player and new players in one list
+        List<String> all = Stream.concat(
+                Stream.of(localPlayerName),
+                newPlayers
+                        .stream()
+                        .filter(name -> !localPlayerName.equals(name))
+                        .distinct()
+                        .sorted()
+        ).collect(Collectors.toUnmodifiableList());
 
-        sendEvent();
+        this.players = all;
+        sendEvent(all);
     }
 
 
@@ -117,18 +140,11 @@ public class NearbyPlayerTracker {
             return null;
         }
 
-        String name = player.getName();
-        //noinspection RedundantIfStatement
-        if (name == null) {
-            return null;
-        }
-
-        return name;
+        // might be null
+        return player.getName();
     }
 
-    private void sendEvent() {
-        List<String> copy = new ArrayList<>(this.players);
-
-        bus.post(new NearbyPlayerTrackerUpdate(copy));
+    private void sendEvent(List<String> playerList) {
+        bus.post(new NearbyPlayerTrackerUpdate(playerList));
     }
 }
