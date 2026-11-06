@@ -50,6 +50,8 @@ public class PlayerInspectorLayout {
         panel.add(Box.createVerticalStrut(10));
 
         panel.add(createEquipmentPanel());
+
+        // todo: add buttons that links to DPS page
     }
 
 

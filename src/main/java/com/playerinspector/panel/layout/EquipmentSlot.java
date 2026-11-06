@@ -1,7 +1,7 @@
 package com.playerinspector.panel.layout;
 
+import com.playerinspector.utils.Threads;
 import net.runelite.api.ItemComposition;
-import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.util.AsyncBufferedImage;
@@ -25,16 +25,16 @@ public class EquipmentSlot extends JPanel {
 
     private SpriteManager sprites;
     private ItemManager items;
-    private ClientThread clientThread;
+    private Threads threads;
 
     // an icon of a slot itself, when empty. Buffered after init.
     private BufferedImage emptyImage;
 
-    public EquipmentSlot(Type type, SpriteManager sprites, ItemManager items, ClientThread clientThread) {
+    public EquipmentSlot(Type type, SpriteManager sprites, ItemManager items, Threads threads) {
         this.type = type;
         this.sprites = sprites;
         this.items = items;
-        this.clientThread = clientThread;
+        this.threads = threads;
 
         setLayout(new OverlayLayout(this));
         setPreferredSize(preferredDims);
@@ -62,11 +62,11 @@ public class EquipmentSlot extends JPanel {
             img.addTo(icon);
             centerLabel(icon);
             // todo: dunno why, but eq sprites are not centered - by 4px.
-            icon.setBorder(BorderFactory.createEmptyBorder(0, 4, 0 ,0));
+            icon.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
         });
 
 
-        clientThread.invoke(() -> {
+        threads.onClient(() -> {
             String gePrice = QuantityFormatter.formatNumber(items.getItemPrice(item.getId()));
             String haPrice = QuantityFormatter.formatNumber(item.getHaPrice());
 
@@ -128,7 +128,7 @@ public class EquipmentSlot extends JPanel {
     // copy-paste from addSpriteTo, but allows to handle loaded image differently
     private void loadSprite(int index, Consumer<BufferedImage> consumer) {
         this.sprites.getSpriteAsync(index, 0, img ->
-                SwingUtilities.invokeLater(() -> consumer.accept(img)));
+                threads.onEdt(() -> consumer.accept(img)));
     }
 
     private JLabel createLabel() {

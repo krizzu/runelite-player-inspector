@@ -2,7 +2,7 @@ package com.playerinspector.panel.layout;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import net.runelite.client.callback.ClientThread;
+import com.playerinspector.utils.Threads;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 
@@ -10,16 +10,16 @@ import net.runelite.client.game.SpriteManager;
 public class EquipmentSlotFactory {
     private final SpriteManager sprites;
     private final ItemManager items;
-    private final ClientThread clientThread;
+    private final Threads threads;
 
     @Inject
-    EquipmentSlotFactory(SpriteManager sprites, ItemManager items, ClientThread clientThread) {
+    EquipmentSlotFactory(SpriteManager sprites, ItemManager items, Threads threads) {
         this.sprites = sprites;
         this.items = items;
-        this.clientThread = clientThread;
+        this.threads = threads;
     }
 
     public EquipmentSlot create(EquipmentSlot.Type type) {
-        return new EquipmentSlot(type, sprites, items, clientThread);
+        return new EquipmentSlot(type, sprites, items, threads);
     }
 }
