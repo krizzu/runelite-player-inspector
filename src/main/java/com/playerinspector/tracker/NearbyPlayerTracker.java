@@ -10,12 +10,11 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.PlayerDespawned;
 import net.runelite.api.events.PlayerSpawned;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -28,6 +27,10 @@ public class NearbyPlayerTracker {
     private final Client client;
     private final EventBus bus;
     private final Threads threads;
+
+    // controls when the tracked list needs updating
+    // for example, player spawn/despawn sets this to true
+    private boolean needsUpdate = false;
 
     @Getter
     private volatile List<String> players = List.of();
@@ -72,28 +75,23 @@ public class NearbyPlayerTracker {
 
 
     @Subscribe
-    public void onPlayerSpawned(PlayerSpawned spawn) {
-        String name = getPlayerNameOrNull(spawn.getPlayer());
-
-        if (name == null) {
-            return;
+    public void onGameTick(GameTick tick) {
+        if (needsUpdate) {
+            seed();
+            needsUpdate = false;
         }
+    }
 
-        List<String> newList = new ArrayList<>();
-        newList.add(name);
-        newList.addAll(this.players);
-        sendUpdateWithNewPlayers(newList);
+    @Subscribe
+    public void onPlayerSpawned(PlayerSpawned spawn) {
+        needsUpdate = true;
     }
 
     @Subscribe
     public void onPlayerDespawned(PlayerDespawned despawn) {
-        String name = getPlayerNameOrNull(despawn.getPlayer());
-        if (name == null) {
-            return;
-        }
-        List<String> newList = this.players.stream().filter(n -> !name.equals(n)).collect(Collectors.toList());
-        sendUpdateWithNewPlayers(newList);
+        needsUpdate = true;
     }
+
 
     @Subscribe
     public void onGameStateChanged(GameStateChanged change) {
@@ -111,12 +109,11 @@ public class NearbyPlayerTracker {
         }
     }
 
-    // updates the list, with local player being at the top
+    // updates the list, with local player being at the top and notifies listeners
     private void sendUpdateWithNewPlayers(List<String> newPlayers) {
         String localPlayerName = getPlayerNameOrNull(client.getLocalPlayer());
         if (localPlayerName == null) {
-            // todo: change this to debug once done
-            log.warn("No Local player, dropping update");
+            log.debug("No Local player, dropping update");
             return;
         }
 
