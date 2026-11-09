@@ -51,16 +51,24 @@ public class PlayerInspectorPanel extends PluginPanel {
     }
 
 
-    public void init() {
+    public void init(boolean wikiSelfDpsButtonVisible) {
         bus.register(this);
         navButton = NavButtonFactory.create(this);
         toolbar.addNavigation(navButton);
-        layout.init(this);
+        layout.init(this, wikiSelfDpsButtonVisible);
     }
 
     public void deinit() {
         bus.unregister(this);
         toolbar.removeNavigation(navButton);
+    }
+
+    public void updateSelfDpsButton(boolean visible) {
+        if (visible) {
+            layout.showSelfDpsButton();
+        } else {
+            layout.removeSelfDpsButton();
+        }
     }
 
     public void showEquipment(Player player) {

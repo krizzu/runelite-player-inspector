@@ -11,6 +11,7 @@ import net.runelite.api.Player;
 import net.runelite.api.events.*;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.*;
 import net.runelite.client.menus.MenuManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -48,7 +49,7 @@ public class PlayerInspectorPlugin extends Plugin {
         tracker.init();
         // inject here, so that Swing's EDT thread is used (layout style is applied here)
         panel = injector.getInstance(PlayerInspectorPanel.class);
-        panel.init();
+        panel.init(config.wikiSelfDpsButton());
 
         tracker.seed();
     }
@@ -64,6 +65,18 @@ public class PlayerInspectorPlugin extends Plugin {
     @Provides
     PlayerInspectorConfig provideConfig(ConfigManager configManager) {
         return configManager.getConfig(PlayerInspectorConfig.class);
+    }
+
+    @Subscribe
+    public void onConfigChanged(ConfigChanged change) {
+        if(!change.getGroup().equals("player-inspector")) {
+            return;
+        }
+
+        if(change.getKey().equals("wikiSelfDpsButton")) {
+            boolean dpsButtonVisible = Boolean.parseBoolean(change.getNewValue());
+            panel.updateSelfDpsButton(dpsButtonVisible);
+        }
     }
 
     @Subscribe
