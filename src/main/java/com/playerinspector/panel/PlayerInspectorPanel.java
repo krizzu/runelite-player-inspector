@@ -26,6 +26,10 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.PluginPanel;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
 
 @Slf4j
 public class PlayerInspectorPanel extends PluginPanel {
@@ -42,6 +46,11 @@ public class PlayerInspectorPanel extends PluginPanel {
 
     private NavigationButton navButton;
 
+    private final String dpsButtonText = "View DPS";
+
+    // dps buttons + container
+    private final JButton dpsButton = new JButton(dpsButtonText);
+
     @Inject
     public PlayerInspectorPanel(ClientToolbar toolbar, ItemManager itemManager, Client client, PlayerInspectorLayout layout, Threads threads, NearbyPlayerTracker tracker, EventBus bus) {
         this.toolbar = toolbar;
@@ -54,11 +63,13 @@ public class PlayerInspectorPanel extends PluginPanel {
     }
 
 
-    public void init(boolean wikiSelfDpsButtonVisible) {
+    public void init(boolean dpsButtonVisible) {
         bus.register(this);
         navButton = NavButtonFactory.create(this);
         toolbar.addNavigation(navButton);
-        layout.init(this, wikiSelfDpsButtonVisible);
+        layout.init(this);
+
+        setUpDpsButtonLayout(dpsButtonVisible);
     }
 
     public void deinit() {
@@ -67,11 +78,7 @@ public class PlayerInspectorPanel extends PluginPanel {
     }
 
     public void updateSelfDpsButton(boolean visible) {
-        if (visible) {
-            layout.showSelfDpsButton();
-        } else {
-            layout.removeSelfDpsButton();
-        }
+        dpsButton.setVisible(visible);
     }
 
     // note to self: caller needs to use client thread
@@ -175,6 +182,26 @@ public class PlayerInspectorPanel extends PluginPanel {
         layout.setTotalGeValue(0);
         currentPlayer = null;
     }
+
+    private void setUpDpsButtonLayout(boolean visible) {
+        add(Box.createVerticalStrut(10));
+        JPanel container = new JPanel(new BorderLayout(5, 0));
+        add(container);
+        dpsButton.addActionListener(onSelfDpsClick);
+        container.add(dpsButton);
+        dpsButton.setVisible(visible);
+    }
+
+    private final ActionListener onSelfDpsClick = e -> {
+        dpsButton.setEnabled(false);
+        dpsButton.setText("loading...");
+        try {
+            log.info("going to use player: " + currentPlayer);
+        } finally {
+            dpsButton.setEnabled(true);
+            dpsButton.setText(dpsButtonText);
+        }
+    };
 
     @Subscribe
     private void onPlayerSelectedEvent(PlayerSelectedEvent selected) {

@@ -20,8 +20,6 @@ public class PlayerInspectorLayout {
     private final DefaultComboBoxModel<String> playerSelectorModel = new DefaultComboBoxModel<>();
     private final JComboBox<String> playerSelector = new JComboBox<>(playerSelectorModel);
     private final JLabel totalGe = new JLabel("-");
-    private final JButton selfDps = new JButton("Show my DPS");
-    private final JPanel dpsButtonContainer = new JPanel(new BorderLayout(5, 0));
 
     /**
      * cached list of users that meant to be updated, but popup was visible
@@ -69,7 +67,7 @@ public class PlayerInspectorLayout {
         this.ring = equipmentSlotFactory.create(EquipmentSlot.Type.Ring);
     }
 
-    public void init(PluginPanel panel, boolean wikiSelfDpsButtonVisible) {
+    public void init(PluginPanel panel) {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         // padding of 10px
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -87,13 +85,7 @@ public class PlayerInspectorLayout {
 
 
         // setup dps buttons
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(dpsButtonContainer);
-        selfDps.addActionListener(onSelfDpsClick);
 
-        if (wikiSelfDpsButtonVisible) {
-            showSelfDpsButton();
-        }
 
         setUpPlayerSelectorListeners();
     }
@@ -142,33 +134,6 @@ public class PlayerInspectorLayout {
         }
 
         updatePlayerModel(players);
-    }
-
-    public void showSelfDpsButton() {
-        dpsButtonContainer.add(selfDps);
-    }
-
-    public void removeSelfDpsButton() {
-        dpsButtonContainer.remove(selfDps);
-    }
-
-    private final ActionListener onSelfDpsClick = e -> {
-        setSelfDpsButtonState(true);
-        try {
-        // todo: call api to get results
-        } finally {
-            setSelfDpsButtonState(false);
-        }
-    };
-
-    private void setSelfDpsButtonState(boolean loading) {
-        if(loading) {
-            selfDps.setEnabled(false);
-            selfDps.setText("loading...");
-        } else {
-            selfDps.setEnabled(true);
-            selfDps.setText("Show my DPS");
-        }
     }
 
     private void updatePlayerModel(List<String> players) {
