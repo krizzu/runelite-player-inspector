@@ -1,13 +1,13 @@
 package com.playerinspector.panel;
 
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import com.playerinspector.model.*;
 import com.playerinspector.panel.layout.EquipmentSlot;
 import com.playerinspector.panel.layout.PlayerInspectorLayout;
 import com.playerinspector.panel.layout.PlayerSelectedEvent;
 import com.playerinspector.tracker.NearbyPlayerTracker;
 import com.playerinspector.tracker.NearbyPlayerTrackerUpdate;
-import com.playerinspector.utils.Threads;
+import com.playerinspector.utils.*;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.EquipmentInventorySlot;
@@ -36,6 +36,9 @@ public class PlayerInspectorPanel extends PluginPanel {
     private final NearbyPlayerTracker tracker;
     private final EventBus bus;
     private final Client client;
+
+    // hold information about currently visible player
+    private volatile CurrentPlayer currentPlayer;
 
     private NavigationButton navButton;
 
@@ -71,12 +74,13 @@ public class PlayerInspectorPanel extends PluginPanel {
         }
     }
 
+    // note to self: caller needs to use client thread
     public void showEquipment(Player player) {
         Player localPlayer = client.getLocalPlayer();
         boolean isLocal = localPlayer == player;
 
         if (isLocal) {
-            showLocalPlayerEquipment();
+            showLocalPlayerEquipment(player);
         } else {
             showPlayerEquipment(player);
         }
@@ -92,9 +96,10 @@ public class PlayerInspectorPanel extends PluginPanel {
         });
     }
 
-
     // note: think about supporting Stackable items (arrows, etc) for better display
-    private void showLocalPlayerEquipment() {
+    // note: method assumes player is non-nullable
+    private void showLocalPlayerEquipment(Player player) {
+        String playerName = player.getName();
         ItemContainer worn = client.getItemContainer(InventoryID.WORN);
 
         if (worn == null) {
@@ -104,6 +109,8 @@ public class PlayerInspectorPanel extends PluginPanel {
         }
 
         long total = 0;
+        PlayerEquipment.PlayerEquipmentBuilder eq = PlayerEquipment.builder();
+
         for (EquipmentInventorySlot inv : EquipmentInventorySlot.values()) {
             EquipmentSlot.Type slotType = equipmentInventoryIdToSlot(inv);
             if (slotType == null) {
@@ -112,19 +119,25 @@ public class PlayerInspectorPanel extends PluginPanel {
 
             Item item = worn.getItem(inv.getSlotIdx());
             if (item == null) {
+                PlayerEquipmentUtils.setEquipment(eq, slotType, null);
                 layout.clearEquipmentItem(slotType);
             } else {
                 ItemComposition comp = itemManager.getItemComposition(item.getId());
                 layout.setEquipmentItem(slotType, comp);
                 total += itemManager.getItemPrice(item.getId());
+                PlayerEquipmentUtils.setEquipment(eq, slotType, item.getId());
             }
         }
 
+        currentPlayer = new CurrentPlayer(playerName, eq.build());
         layout.setTotalGeValue(total);
     }
 
+    // note: this must run on client thread (touches player composition)
     private void showPlayerEquipment(Player player) {
+        String playerName = player.getName();
         PlayerComposition comp = player.getPlayerComposition();
+        PlayerEquipment.PlayerEquipmentBuilder eq = PlayerEquipment.builder();
 
         // clear local player's ring and arrows, non-existing for other players
         layout.clearEquipmentItem(EquipmentSlot.Type.Ammo);
@@ -142,13 +155,16 @@ public class PlayerInspectorPanel extends PluginPanel {
 
             if (!isItem) {
                 layout.clearEquipmentItem(slotType);
+                PlayerEquipmentUtils.setEquipment(eq, slotType, null);
             } else {
                 ItemComposition item = itemManager.getItemComposition(eqId);
                 total += itemManager.getItemPrice(eqId);
                 layout.setEquipmentItem(slotType, item);
+                PlayerEquipmentUtils.setEquipment(eq, slotType, item.getId());
             }
         }
 
+        currentPlayer = new CurrentPlayer(playerName, eq.build());
         layout.setTotalGeValue(total);
     }
 
@@ -157,6 +173,7 @@ public class PlayerInspectorPanel extends PluginPanel {
             layout.clearEquipmentItem(type);
         }
         layout.setTotalGeValue(0);
+        currentPlayer = null;
     }
 
     @Subscribe
