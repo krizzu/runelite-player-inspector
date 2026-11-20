@@ -66,13 +66,13 @@ public class DpsWikiApi {
 
 
     // note: callback is fired on EDT
-    public void fetchShortLink(CurrentPlayer player, PlayerStats stats, DpsWikiApiCallback callback) {
+    public void fetchShortLink(PlayerEquipment equipment, PlayerStats stats, DpsWikiApiCallback callback) {
         final int requestId = requestCounter.incrementAndGet();
         cancelInFlightCall();
 
         Request request;
         try {
-            JsonObject jsonBody = buildShortlinkData(player, stats);
+            JsonObject jsonBody = buildShortlinkData(equipment, stats);
             request = new Request.Builder()
                     .url(SHORTLINK_ENDPOINT)
                     .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonBody.toString()))
@@ -175,8 +175,7 @@ public class DpsWikiApi {
 
 
     // borrowed from WikiDpsManager.java
-    // note: needs to run on client side
-    private JsonObject buildShortlinkData(CurrentPlayer player, PlayerStats stats) {
+    private JsonObject buildShortlinkData(PlayerEquipment equipment, PlayerStats stats) {
         JsonObject j = new JsonObject();
 
         // Build the player's loadout data
@@ -186,18 +185,18 @@ public class DpsWikiApi {
         JsonObject eq = new JsonObject();
 
 
-        eq.add("ammo", createEqJsonObject(player.getEq().getAmmo()));
+        eq.add("ammo", createEqJsonObject(equipment.getAmmo()));
 
-        eq.add("body", createEqJsonObject(player.getEq().getBody()));
-        eq.add("cape", createEqJsonObject(player.getEq().getCape()));
-        eq.add("feet", createEqJsonObject(player.getEq().getBoots()));
-        eq.add("hands", createEqJsonObject(player.getEq().getGloves()));
-        eq.add("head", createEqJsonObject(player.getEq().getHead()));
-        eq.add("legs", createEqJsonObject(player.getEq().getLegs()));
-        eq.add("neck", createEqJsonObject(player.getEq().getAmulet()));
-        eq.add("ring", createEqJsonObject(player.getEq().getRing()));
-        eq.add("shield", createEqJsonObject(player.getEq().getLeftHand()));
-        eq.add("weapon", createEqJsonObject(player.getEq().getRightHand()));
+        eq.add("body", createEqJsonObject(equipment.getBody()));
+        eq.add("cape", createEqJsonObject(equipment.getCape()));
+        eq.add("feet", createEqJsonObject(equipment.getBoots()));
+        eq.add("hands", createEqJsonObject(equipment.getGloves()));
+        eq.add("head", createEqJsonObject(equipment.getHead()));
+        eq.add("legs", createEqJsonObject(equipment.getLegs()));
+        eq.add("neck", createEqJsonObject(equipment.getAmulet()));
+        eq.add("ring", createEqJsonObject(equipment.getRing()));
+        eq.add("shield", createEqJsonObject(equipment.getLeftHand()));
+        eq.add("weapon", createEqJsonObject(equipment.getRightHand()));
         l.add("equipment", eq);
 
         JsonObject skills = new JsonObject();

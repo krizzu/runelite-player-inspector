@@ -203,7 +203,7 @@ public class PlayerInspectorPanel extends PluginPanel {
     }
 
     private void fetchAndOpenLinkFor(CurrentPlayer player, PlayerStats stats) {
-                this.api.fetchShortLink(player, stats, new DpsWikiApi.DpsWikiApiCallback() {
+        this.api.fetchShortLink(player.getEq(), stats, new DpsWikiApi.DpsWikiApiCallback() {
             @Override
             public void onError(String errMessage) {
                 log.warn("Could not get Dps shortlink: {}", errMessage);
@@ -233,6 +233,7 @@ public class PlayerInspectorPanel extends PluginPanel {
                 clearAllSlots();
                 break;
             default:
+                // leave the panel as is
                 break;
         }
     }
