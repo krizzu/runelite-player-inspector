@@ -52,4 +52,4 @@ Disabled by default - enable **Wiki DPS calculator** in the plugin settings.
 
 ## License
 
-BSD 2-Clause — see [LICENSE.txt](LICENSE.txt).
+BSD 2-Clause — see [LICENSE.txt](LICENSE).
