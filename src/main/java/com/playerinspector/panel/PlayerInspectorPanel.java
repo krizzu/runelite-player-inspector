@@ -140,7 +140,8 @@ public class PlayerInspectorPanel extends PluginPanel {
             }
         }
 
-        currentPlayer = new CurrentPlayer(playerName, eq.build());
+        // todo: depending on selection, either player maxed OR local player
+        currentPlayer = new CurrentPlayer(playerName, eq.build(), PlayerStats.maxed());
         layout.setTotalGeValue(total);
     }
 
@@ -175,7 +176,8 @@ public class PlayerInspectorPanel extends PluginPanel {
             }
         }
 
-        currentPlayer = new CurrentPlayer(playerName, eq.build());
+        // todo: depending on selection, either player maxed OR local player
+        currentPlayer = new CurrentPlayer(playerName, eq.build(), PlayerStats.fromClient(client));
         layout.setTotalGeValue(total);
     }
 
@@ -220,7 +222,6 @@ public class PlayerInspectorPanel extends PluginPanel {
         });
 
     }
-
 
     @Subscribe
     private void onPlayerSelectedEvent(PlayerSelectedEvent selected) {

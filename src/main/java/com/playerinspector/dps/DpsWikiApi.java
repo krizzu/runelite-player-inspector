@@ -50,9 +50,6 @@ public class DpsWikiApi {
     private static final String UI_ENDPOINT = "https://tools.runescape.wiki/osrs-dps/";
 
     @Inject
-    Client client;
-
-    @Inject
     OkHttpClient okHttpClient;
 
     @Inject
@@ -64,77 +61,74 @@ public class DpsWikiApi {
 
     // note: callback is fired on EDT
     public void fetchShortLink(CurrentPlayer player, DpsWikiApiCallback callback) {
-
-        // run on client, due to [buildShortlinkData] reading data from client
-        threads.onClient(() -> {
+        try {
+            JsonObject jsonBody;
             try {
-                JsonObject jsonBody;
-                try {
-                    jsonBody = buildShortlinkData(player.getEq());
-                } catch (Exception e) {
-                    threads.onEdt(() -> {
-                        callback.onError("Failed to build url payload: " + e.getLocalizedMessage());
-                    });
-                    return;
-                }
-
-                Request request = new Request.Builder()
-                        .url(SHORTLINK_ENDPOINT)
-                        .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonBody.toString()))
-                        .build();
-
-                okHttpClient.newCall(request).enqueue(new Callback() {
-                    @Override
-                    public void onFailure(Call call, IOException e) {
-                        log.warn("Failed to create shortlink for DpsWikiApi", e);
-                        threads.onEdt(() -> {
-                            callback.onError("Failed to call wiki api: " + e.getLocalizedMessage());
-                        });
-                    }
-
-                    @Override
-                    public void onResponse(Call call, Response response) {
-                        try (response) {
-                            if (response.isSuccessful() && response.body() != null) {
-                                String responseData;
-                                try {
-                                    ShortlinkResponse resp = gson.fromJson(response.body().charStream(), ShortlinkResponse.class);
-                                    responseData = resp.data;
-                                } catch (JsonIOException e) {
-                                    log.warn("Could not parse response data: " + e.getLocalizedMessage());
-                                    threads.onEdt(() -> {
-                                        callback.onError("Failed to parse response: " + e.getLocalizedMessage());
-                                    });
-                                    return;
-                                }
-
-                                if (responseData == null) {
-                                    log.warn("response data is null");
-                                    threads.onEdt(() -> {
-                                        callback.onError("Failed to get valid response");
-                                    });
-                                    return;
-                                }
-
-                                String link = UI_ENDPOINT + "?id=" + responseData;
-                                threads.onEdt(() -> {
-                                    callback.onSuccess(link);
-                                });
-                            } else {
-                                log.warn("Failed to create shortlink for DPS calculator: http status {}", response.code());
-                                threads.onEdt(() -> {
-                                    callback.onError("Failed to create shortlink for DPS calculator: http status " + response.code());
-                                });
-                            }
-                        }
-                    }
-                });
+                jsonBody = buildShortlinkData(player);
             } catch (Exception e) {
                 threads.onEdt(() -> {
-                    callback.onError("Something went wrong building request: " + e.getLocalizedMessage());
+                    callback.onError("Failed to build url payload: " + e.getLocalizedMessage());
                 });
+                return;
             }
-        });
+
+            Request request = new Request.Builder()
+                    .url(SHORTLINK_ENDPOINT)
+                    .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonBody.toString()))
+                    .build();
+
+            okHttpClient.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    log.warn("Failed to create shortlink for DpsWikiApi", e);
+                    threads.onEdt(() -> {
+                        callback.onError("Failed to call wiki api: " + e.getLocalizedMessage());
+                    });
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) {
+                    try (response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            String responseData;
+                            try {
+                                ShortlinkResponse resp = gson.fromJson(response.body().charStream(), ShortlinkResponse.class);
+                                responseData = resp.data;
+                            } catch (JsonIOException e) {
+                                log.warn("Could not parse response data: " + e.getLocalizedMessage());
+                                threads.onEdt(() -> {
+                                    callback.onError("Failed to parse response: " + e.getLocalizedMessage());
+                                });
+                                return;
+                            }
+
+                            if (responseData == null) {
+                                log.warn("response data is null");
+                                threads.onEdt(() -> {
+                                    callback.onError("Failed to get valid response");
+                                });
+                                return;
+                            }
+
+                            String link = UI_ENDPOINT + "?id=" + responseData;
+                            threads.onEdt(() -> {
+                                callback.onSuccess(link);
+                            });
+                        } else {
+                            log.warn("Failed to create shortlink for DPS calculator: http status {}", response.code());
+                            threads.onEdt(() -> {
+                                callback.onError("Failed to create shortlink for DPS calculator: http status " + response.code());
+                            });
+                        }
+                    }
+                }
+            });
+        } catch (Exception e) {
+            threads.onEdt(() -> {
+                callback.onError("Something went wrong building request: " + e.getLocalizedMessage());
+            });
+        }
+
     }
 
     public interface DpsWikiApiCallback {
@@ -146,7 +140,7 @@ public class DpsWikiApi {
 
     // borrowed from WikiDpsManager.java
     // note: needs to run on client side
-    private JsonObject buildShortlinkData(PlayerEquipment eqp) {
+    private JsonObject buildShortlinkData(CurrentPlayer player) {
         JsonObject j = new JsonObject();
 
         // Build the player's loadout data
@@ -156,39 +150,38 @@ public class DpsWikiApi {
         JsonObject eq = new JsonObject();
 
 
-        eq.add("ammo", createEqJsonObject(eqp.getAmmo()));
+        eq.add("ammo", createEqJsonObject(player.getEq().getAmmo()));
 
-        eq.add("body", createEqJsonObject(eqp.getBody()));
-        eq.add("cape", createEqJsonObject(eqp.getCape()));
-        eq.add("feet", createEqJsonObject(eqp.getBoots()));
-        eq.add("hands", createEqJsonObject(eqp.getGloves()));
-        eq.add("head", createEqJsonObject(eqp.getHead()));
-        eq.add("legs", createEqJsonObject(eqp.getLegs()));
-        eq.add("neck", createEqJsonObject(eqp.getAmulet()));
-        eq.add("ring", createEqJsonObject(eqp.getRing()));
-        eq.add("shield", createEqJsonObject(eqp.getLeftHand()));
-        eq.add("weapon", createEqJsonObject(eqp.getRightHand()));
+        eq.add("body", createEqJsonObject(player.getEq().getBody()));
+        eq.add("cape", createEqJsonObject(player.getEq().getCape()));
+        eq.add("feet", createEqJsonObject(player.getEq().getBoots()));
+        eq.add("hands", createEqJsonObject(player.getEq().getGloves()));
+        eq.add("head", createEqJsonObject(player.getEq().getHead()));
+        eq.add("legs", createEqJsonObject(player.getEq().getLegs()));
+        eq.add("neck", createEqJsonObject(player.getEq().getAmulet()));
+        eq.add("ring", createEqJsonObject(player.getEq().getRing()));
+        eq.add("shield", createEqJsonObject(player.getEq().getLeftHand()));
+        eq.add("weapon", createEqJsonObject(player.getEq().getRightHand()));
         l.add("equipment", eq);
 
         JsonObject skills = new JsonObject();
-        skills.addProperty("atk", client.getRealSkillLevel(Skill.ATTACK));
-        skills.addProperty("def", client.getRealSkillLevel(Skill.DEFENCE));
-        skills.addProperty("hp", client.getRealSkillLevel(Skill.HITPOINTS));
-        skills.addProperty("magic", client.getRealSkillLevel(Skill.MAGIC));
-        skills.addProperty("mining", client.getRealSkillLevel(Skill.MINING));
-        skills.addProperty("prayer", client.getRealSkillLevel(Skill.PRAYER));
-        skills.addProperty("ranged", client.getRealSkillLevel(Skill.RANGED));
-        skills.addProperty("str", client.getRealSkillLevel(Skill.STRENGTH));
+        skills.addProperty("hp", player.getStats().getHp());
+        skills.addProperty("atk", player.getStats().getAtk());
+        skills.addProperty("str", player.getStats().getStr());
+        skills.addProperty("def", player.getStats().getDef());
+        skills.addProperty("magic", player.getStats().getMagic());
+        skills.addProperty("prayer", player.getStats().getPrayer());
+        skills.addProperty("ranged", player.getStats().getRanged());
         l.add("skills", skills);
 
         JsonObject buffs = new JsonObject();
-        buffs.addProperty("inWilderness", client.getVarbitValue(VarbitID.INSIDE_WILDERNESS) == 1);
-        buffs.addProperty("kandarinDiary", client.getVarbitValue(VarbitID.KANDARIN_DIARY_HARD_COMPLETE) == 1);
-        buffs.addProperty("onSlayerTask", client.getVarpValue(VarPlayerID.SLAYER_COUNT) > 0);
-        buffs.addProperty("chargeSpell", client.getVarpValue(VarPlayerID.MAGEARENA_CHARGE) > 0);
+        buffs.addProperty("inWilderness", false);
+        buffs.addProperty("kandarinDiary", false);
+        buffs.addProperty("onSlayerTask", false);
+        buffs.addProperty("chargeSpell", false);
         l.add("buffs", buffs);
 
-        l.addProperty("name", client.getLocalPlayer().getName());
+        l.addProperty("name", player.getName());
 
         loadouts.add(l);
         j.add("loadouts", loadouts);
