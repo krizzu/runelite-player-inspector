@@ -15,12 +15,12 @@ import java.util.function.Consumer;
 
 public class EquipmentSlot extends JPanel {
 
-    public static enum Type {
+    public enum Type {
         Head, Cape, Amulet, Ammo, RightHand, Body, LeftHand, Legs, Gloves, Boots, Ring
     }
 
     private final Dimension preferredDims = new Dimension(36, 36);
-    public Type type;
+    private final Type type;
     private JLabel icon = createLabel();
 
     private final SpriteManager sprites;

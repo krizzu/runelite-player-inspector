@@ -109,12 +109,12 @@ public class PlayerInspectorPlugin extends Plugin {
         }
         if (!added) {
             menuManager.addPlayerMenuItem(Constants.MENU_ENTRY_LABEL);
-            log.info("Menu entry added");
+            log.debug("Menu entry added");
         }
     }
 
     private void removeMenuEntry() {
         menuManager.removePlayerMenuItem(Constants.MENU_ENTRY_LABEL);
-        log.info("Menu entry removed");
+        log.debug("Menu entry removed");
     }
 }
