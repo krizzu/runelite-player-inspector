@@ -93,8 +93,8 @@ public class DpsWikiApi {
                             String responseData;
                             try {
                                 ShortlinkResponse resp = gson.fromJson(response.body().charStream(), ShortlinkResponse.class);
-                                responseData = resp.data;
-                            } catch (JsonIOException e) {
+                                responseData = resp == null ? null : resp.data;
+                            } catch (JsonParseException e) {
                                 log.warn("Could not parse response data", e);
                                 threads.onEdt(() -> {
                                     callback.onError("Failed to parse response: " + e.getLocalizedMessage());
