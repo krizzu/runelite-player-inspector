@@ -3,32 +3,37 @@ package com.playerinspector.model;
 import lombok.*;
 import net.runelite.api.*;
 
-import javax.annotation.*;
-
 @Value
 @Builder
 public class PlayerStats {
 
+    private static final int MAX_LEVEL = 99;
+
     public static PlayerStats maxed() {
-        return new PlayerStats(
-                99,
-                99, 99, 99, 99, 99, 99
-        );
+        return PlayerStats.builder()
+                .atk(MAX_LEVEL)
+                .str(MAX_LEVEL)
+                .def(MAX_LEVEL)
+                .ranged(MAX_LEVEL)
+                .magic(MAX_LEVEL)
+                .prayer(MAX_LEVEL)
+                .hp(MAX_LEVEL)
+                .build();
     }
 
     /**
      * note: needs to run on client thread side
      */
     public static PlayerStats fromClient(Client client) {
-        return new PlayerStats(
-                client.getRealSkillLevel(Skill.ATTACK),
-                client.getRealSkillLevel(Skill.STRENGTH),
-                client.getRealSkillLevel(Skill.DEFENCE),
-                client.getRealSkillLevel(Skill.RANGED),
-                client.getRealSkillLevel(Skill.MAGIC),
-                client.getRealSkillLevel(Skill.PRAYER),
-                client.getRealSkillLevel(Skill.HITPOINTS)
-        );
+        return PlayerStats.builder()
+                .atk(client.getRealSkillLevel(Skill.ATTACK))
+                .str(client.getRealSkillLevel(Skill.STRENGTH))
+                .def(client.getRealSkillLevel(Skill.DEFENCE))
+                .ranged(client.getRealSkillLevel(Skill.RANGED))
+                .magic(client.getRealSkillLevel(Skill.MAGIC))
+                .prayer(client.getRealSkillLevel(Skill.PRAYER))
+                .hp(client.getRealSkillLevel(Skill.HITPOINTS))
+                .build();
     }
 
 
