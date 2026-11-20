@@ -87,14 +87,12 @@ public class EquipmentSlot extends JPanel {
     }
 
     public void clearEquipmentItem() {
-        if (emptyImage == null) {
-            throw new RuntimeException("Empty image used too soon, should not be null!");
-        }
-
-        icon.setIcon(new ImageIcon(emptyImage));
         icon.setToolTipText("");
         icon.setBorder(null);
         setPopupMenuForItem(null);
+        if (emptyImage != null) {
+            icon.setIcon(new ImageIcon(emptyImage));
+        }
     }
 
     private void setPopupMenuForItem(ItemComposition item) {
