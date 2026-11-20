@@ -41,6 +41,7 @@ import okhttp3.*;
 
 import javax.annotation.*;
 import java.io.*;
+import java.util.concurrent.atomic.*;
 
 
 @Slf4j(topic = "DpsWikiApi")
@@ -60,9 +61,15 @@ public class DpsWikiApi {
 
     private volatile Call inFlightCall;
 
+    // track requests, stale ones are discarded
+    private final AtomicInteger requestCounter = new AtomicInteger();
+
 
     // note: callback is fired on EDT
     public void fetchShortLink(CurrentPlayer player, PlayerStats stats, DpsWikiApiCallback callback) {
+        final int requestId = requestCounter.incrementAndGet();
+        cancelInFlightCall();
+
         Request request;
         try {
             JsonObject jsonBody = buildShortlinkData(player, stats);
@@ -72,7 +79,7 @@ public class DpsWikiApi {
                     .build();
         } catch (Exception e) {
             log.warn("Failed to build shortlink request", e);
-            notifyError(callback, "Failed to build url payload: " + e.getLocalizedMessage());
+            notifyError(requestId, callback, "Failed to build url payload: " + e.getLocalizedMessage());
             return;
         }
 
@@ -84,7 +91,7 @@ public class DpsWikiApi {
             public void onFailure(Call call, IOException e) {
                 clearInFlightCall(call);
                 log.warn("Failed to create shortlink for DpsWikiApi", e);
-                notifyError(callback, "Failed to call wiki api: " + e.getLocalizedMessage());
+                notifyError(requestId, callback, "Failed to call wiki api: " + e.getLocalizedMessage());
             }
 
             @Override
@@ -94,7 +101,7 @@ public class DpsWikiApi {
                 try (response) {
                     if (!response.isSuccessful() || response.body() == null) {
                         log.warn("Failed to create shortlink for DPS calculator: http status {}", response.code());
-                        notifyError(callback, "Failed to create shortlink for DPS calculator: http status " + response.code());
+                        notifyError(requestId, callback, "Failed to create shortlink for DPS calculator: http status " + response.code());
                         return;
                     }
 
@@ -104,23 +111,29 @@ public class DpsWikiApi {
                         responseData = resp == null ? null : resp.data;
                     } catch (JsonParseException e) {
                         log.warn("Could not parse response data", e);
-                        notifyError(callback, "Failed to parse response: " + e.getLocalizedMessage());
+                        notifyError(requestId, callback, "Failed to parse response: " + e.getLocalizedMessage());
                         return;
                     }
 
                     if (responseData == null) {
                         log.warn("response data is null");
-                        notifyError(callback, "Failed to get valid response");
+                        notifyError(requestId, callback, "Failed to get valid response");
                         return;
                     }
 
-                    notifySuccess(callback, UI_ENDPOINT + "?id=" + responseData);
+                    notifySuccess(requestId, callback, UI_ENDPOINT + "?id=" + responseData);
                 }
             }
         });
     }
 
     public void cancel() {
+        // bumping the counter marks whatever is in flight as stale
+        requestCounter.incrementAndGet();
+        cancelInFlightCall();
+    }
+
+    private void cancelInFlightCall() {
         Call call = inFlightCall;
         inFlightCall = null;
         if (call != null) {
@@ -134,12 +147,24 @@ public class DpsWikiApi {
         }
     }
 
-    private void notifySuccess(DpsWikiApiCallback callback, String url) {
+    private void notifySuccess(int requestId, DpsWikiApiCallback callback, String url) {
+        if (isStale(requestId)) {
+            log.debug("Dropping stale shortlink response");
+            return;
+        }
         threads.onEdt(() -> callback.onSuccess(url));
     }
 
-    private void notifyError(DpsWikiApiCallback callback, String message) {
+    private void notifyError(int requestId, DpsWikiApiCallback callback, String message) {
+        if (isStale(requestId)) {
+            log.debug("Dropping stale shortlink error: {}", message);
+            return;
+        }
         threads.onEdt(() -> callback.onError(message));
+    }
+
+    private boolean isStale(int requestId) {
+        return requestId != requestCounter.get();
     }
 
     public interface DpsWikiApiCallback {
