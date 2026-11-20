@@ -203,13 +203,13 @@ public class PlayerInspectorPanel extends PluginPanel {
                 this.api.fetchShortLink(player, stats, new DpsWikiApi.DpsWikiApiCallback() {
             @Override
             public void onError(String errMessage) {
-                log.warn("Could not get Dps shortlink: " + errMessage);
+                log.warn("Could not get Dps shortlink: {}", errMessage);
                 layout.setDpsSectionProcessing(false);
             }
 
             @Override
             public void onSuccess(String url) {
-                log.debug("Got the link, opening: " + url);
+                log.debug("Got the link, opening: {}", url);
                 LinkBrowser.browse(url);
                 layout.setDpsSectionProcessing(false);
             }
