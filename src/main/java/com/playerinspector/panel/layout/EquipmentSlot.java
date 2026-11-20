@@ -2,6 +2,7 @@ package com.playerinspector.panel.layout;
 
 import com.playerinspector.utils.*;
 import net.runelite.api.ItemComposition;
+import net.runelite.api.gameval.SpriteID;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.util.*;
@@ -49,7 +50,7 @@ public class EquipmentSlot extends JPanel {
         });
 
         JLabel background = new JLabel();
-        sprites.addSpriteTo(background, 170, 0);
+        sprites.addSpriteTo(background, SpriteID.Miscgraphics.EQUIPMENT_SLOT_TILE, 0);
         centerLabel(background);
         add(background);
     }
@@ -113,31 +114,30 @@ public class EquipmentSlot extends JPanel {
         setComponentPopupMenu(popupMenu);
     }
 
-    // https://abextm.github.io/cache2/#/viewer/sprite
     private int getSpriteIndex() {
         switch (this.type) {
             case Head:
-                return 156;
+                return SpriteID.Wornicons.HEAD;
             case Cape:
-                return 157;
+                return SpriteID.Wornicons.CAPE;
             case Amulet:
-                return 158;
+                return SpriteID.Wornicons.NECK;
             case Ammo:
-                return 166;
+                return SpriteID.Wornicons.AMMUNITION;
             case RightHand:
-                return 159;
+                return SpriteID.Wornicons.WEAPON;
             case Body:
-                return 161;
+                return SpriteID.Wornicons.TORSO;
             case LeftHand:
-                return 162;
+                return SpriteID.Wornicons.SHIELD;
             case Legs:
-                return 163;
+                return SpriteID.Wornicons.LEGS;
             case Gloves:
-                return 164;
+                return SpriteID.Wornicons.HANDS;
             case Boots:
-                return 165;
+                return SpriteID.Wornicons.FEET;
             case Ring:
-                return 160;
+                return SpriteID.Wornicons.RING;
             default:
                 throw new RuntimeException("Unknown slot type: " + this.type);
         }
