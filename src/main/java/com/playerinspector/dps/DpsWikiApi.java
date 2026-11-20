@@ -58,6 +58,8 @@ public class DpsWikiApi {
     @Inject
     Gson gson;
 
+    private volatile Call inFlightCall;
+
 
     // note: callback is fired on EDT
     public void fetchShortLink(CurrentPlayer player, PlayerStats stats, DpsWikiApiCallback callback) {
@@ -74,15 +76,21 @@ public class DpsWikiApi {
             return;
         }
 
-        okHttpClient.newCall(request).enqueue(new Callback() {
+        Call call = okHttpClient.newCall(request);
+        inFlightCall = call;
+
+        call.enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
+                clearInFlightCall(call);
                 log.warn("Failed to create shortlink for DpsWikiApi", e);
                 notifyError(callback, "Failed to call wiki api: " + e.getLocalizedMessage());
             }
 
             @Override
             public void onResponse(Call call, Response response) {
+                clearInFlightCall(call);
+
                 try (response) {
                     if (!response.isSuccessful() || response.body() == null) {
                         log.warn("Failed to create shortlink for DPS calculator: http status {}", response.code());
@@ -110,6 +118,20 @@ public class DpsWikiApi {
                 }
             }
         });
+    }
+
+    public void cancel() {
+        Call call = inFlightCall;
+        inFlightCall = null;
+        if (call != null) {
+            call.cancel();
+        }
+    }
+
+    private void clearInFlightCall(Call call) {
+        if (inFlightCall == call) {
+            inFlightCall = null;
+        }
     }
 
     private void notifySuccess(DpsWikiApiCallback callback, String url) {

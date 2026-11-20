@@ -73,6 +73,7 @@ public class PlayerInspectorPanel extends PluginPanel {
     public void deinit() {
         bus.unregister(this);
         toolbar.removeNavigation(navButton);
+        api.cancel();
     }
 
     public void updateDpsSectionVisibility(boolean visible) {
