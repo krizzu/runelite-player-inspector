@@ -61,74 +61,63 @@ public class DpsWikiApi {
 
     // note: callback is fired on EDT
     public void fetchShortLink(CurrentPlayer player, PlayerStats stats, DpsWikiApiCallback callback) {
+        Request request;
         try {
-            JsonObject jsonBody;
-            try {
-                jsonBody = buildShortlinkData(player, stats);
-            } catch (Exception e) {
-                threads.onEdt(() -> {
-                    callback.onError("Failed to build url payload: " + e.getLocalizedMessage());
-                });
-                return;
-            }
-
-            Request request = new Request.Builder()
+            JsonObject jsonBody = buildShortlinkData(player, stats);
+            request = new Request.Builder()
                     .url(SHORTLINK_ENDPOINT)
                     .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonBody.toString()))
                     .build();
-
-            okHttpClient.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    log.warn("Failed to create shortlink for DpsWikiApi", e);
-                    threads.onEdt(() -> {
-                        callback.onError("Failed to call wiki api: " + e.getLocalizedMessage());
-                    });
-                }
-
-                @Override
-                public void onResponse(Call call, Response response) {
-                    try (response) {
-                        if (response.isSuccessful() && response.body() != null) {
-                            String responseData;
-                            try {
-                                ShortlinkResponse resp = gson.fromJson(response.body().charStream(), ShortlinkResponse.class);
-                                responseData = resp == null ? null : resp.data;
-                            } catch (JsonParseException e) {
-                                log.warn("Could not parse response data", e);
-                                threads.onEdt(() -> {
-                                    callback.onError("Failed to parse response: " + e.getLocalizedMessage());
-                                });
-                                return;
-                            }
-
-                            if (responseData == null) {
-                                log.warn("response data is null");
-                                threads.onEdt(() -> {
-                                    callback.onError("Failed to get valid response");
-                                });
-                                return;
-                            }
-
-                            String link = UI_ENDPOINT + "?id=" + responseData;
-                            threads.onEdt(() -> {
-                                callback.onSuccess(link);
-                            });
-                        } else {
-                            log.warn("Failed to create shortlink for DPS calculator: http status {}", response.code());
-                            threads.onEdt(() -> {
-                                callback.onError("Failed to create shortlink for DPS calculator: http status " + response.code());
-                            });
-                        }
-                    }
-                }
-            });
         } catch (Exception e) {
-            threads.onEdt(() -> {
-                callback.onError("Something went wrong building request: " + e.getLocalizedMessage());
-            });
+            log.warn("Failed to build shortlink request", e);
+            notifyError(callback, "Failed to build url payload: " + e.getLocalizedMessage());
+            return;
         }
 
+        okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                log.warn("Failed to create shortlink for DpsWikiApi", e);
+                notifyError(callback, "Failed to call wiki api: " + e.getLocalizedMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) {
+                try (response) {
+                    if (!response.isSuccessful() || response.body() == null) {
+                        log.warn("Failed to create shortlink for DPS calculator: http status {}", response.code());
+                        notifyError(callback, "Failed to create shortlink for DPS calculator: http status " + response.code());
+                        return;
+                    }
+
+                    String responseData;
+                    try {
+                        ShortlinkResponse resp = gson.fromJson(response.body().charStream(), ShortlinkResponse.class);
+                        responseData = resp == null ? null : resp.data;
+                    } catch (JsonParseException e) {
+                        log.warn("Could not parse response data", e);
+                        notifyError(callback, "Failed to parse response: " + e.getLocalizedMessage());
+                        return;
+                    }
+
+                    if (responseData == null) {
+                        log.warn("response data is null");
+                        notifyError(callback, "Failed to get valid response");
+                        return;
+                    }
+
+                    notifySuccess(callback, UI_ENDPOINT + "?id=" + responseData);
+                }
+            }
+        });
+    }
+
+    private void notifySuccess(DpsWikiApiCallback callback, String url) {
+        threads.onEdt(() -> callback.onSuccess(url));
+    }
+
+    private void notifyError(DpsWikiApiCallback callback, String message) {
+        threads.onEdt(() -> callback.onError(message));
     }
 
     public interface DpsWikiApiCallback {
