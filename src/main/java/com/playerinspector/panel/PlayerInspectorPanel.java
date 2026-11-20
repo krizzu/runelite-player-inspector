@@ -1,6 +1,7 @@
 package com.playerinspector.panel;
 
 import com.google.inject.Inject;
+import com.playerinspector.dps.*;
 import com.playerinspector.model.*;
 import com.playerinspector.panel.layout.EquipmentSlot;
 import com.playerinspector.panel.layout.PlayerInspectorLayout;
@@ -25,6 +26,7 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.PluginPanel;
+import net.runelite.client.util.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,19 +42,20 @@ public class PlayerInspectorPanel extends PluginPanel {
     private final NearbyPlayerTracker tracker;
     private final EventBus bus;
     private final Client client;
+    private final DpsWikiApi api;
 
     // hold information about currently visible player
     private volatile CurrentPlayer currentPlayer;
 
+    // side nav button
     private NavigationButton navButton;
 
-    private final String dpsButtonText = "View DPS";
-
     // dps buttons + container
+    private final String dpsButtonText = "View my DPS";
     private final JButton dpsButton = new JButton(dpsButtonText);
 
     @Inject
-    public PlayerInspectorPanel(ClientToolbar toolbar, ItemManager itemManager, Client client, PlayerInspectorLayout layout, Threads threads, NearbyPlayerTracker tracker, EventBus bus) {
+    public PlayerInspectorPanel(ClientToolbar toolbar, ItemManager itemManager, Client client, PlayerInspectorLayout layout, Threads threads, NearbyPlayerTracker tracker, EventBus bus, DpsWikiApi api) {
         this.toolbar = toolbar;
         this.itemManager = itemManager;
         this.layout = layout;
@@ -60,6 +63,7 @@ public class PlayerInspectorPanel extends PluginPanel {
         this.tracker = tracker;
         this.bus = bus;
         this.client = client;
+        this.api = api;
     }
 
 
@@ -187,21 +191,36 @@ public class PlayerInspectorPanel extends PluginPanel {
         add(Box.createVerticalStrut(10));
         JPanel container = new JPanel(new BorderLayout(5, 0));
         add(container);
-        dpsButton.addActionListener(onSelfDpsClick);
+        dpsButton.addActionListener(this::onSelfDpsClick);
         container.add(dpsButton);
         dpsButton.setVisible(visible);
     }
 
-    private final ActionListener onSelfDpsClick = e -> {
+    private void onSelfDpsClick(ActionEvent e) {
         dpsButton.setEnabled(false);
-        dpsButton.setText("loading...");
-        try {
-            log.info("going to use player: " + currentPlayer);
-        } finally {
-            dpsButton.setEnabled(true);
-            dpsButton.setText(dpsButtonText);
-        }
-    };
+        String dpsButtonLoadingText = "Loading...";
+        dpsButton.setText(dpsButtonLoadingText);
+
+        this.api.fetchShortLink(currentPlayer, new DpsWikiApi.DpsWikiApiCallback() {
+            @Override
+            public void onError(String errMessage) {
+                log.warn("Could not get Dps shortlink: " + errMessage);
+                dpsButton.setEnabled(true);
+                dpsButton.setText(dpsButtonText);
+            }
+
+            @Override
+            public void onSuccess(String url) {
+                log.debug("Got the link, opening: " + url);
+                LinkBrowser.browse(url);
+                dpsButton.setEnabled(true);
+                dpsButton.setText(dpsButtonText);
+
+            }
+        });
+
+    }
+
 
     @Subscribe
     private void onPlayerSelectedEvent(PlayerSelectedEvent selected) {
