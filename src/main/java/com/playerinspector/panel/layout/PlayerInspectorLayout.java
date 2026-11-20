@@ -88,7 +88,7 @@ public class PlayerInspectorLayout {
         // dps button
         panel.add(Box.createVerticalStrut(10));
         dpsSectionLayout.setVisibility(dpsPanelVisible);
-        panel.add(dpsSectionLayout.container);
+        panel.add(dpsSectionLayout);
 
         setUpPlayerSelectorListeners();
     }
@@ -140,7 +140,11 @@ public class PlayerInspectorLayout {
     }
 
     public void setDpsSectionActionListener(ActionListener l) {
-        this.dpsSectionLayout.setActionListener(l);
+        dpsSectionLayout.setActionListener(l);
+    }
+
+    public DpsSectionLayout.StatsSource getDpsStatsSource() {
+        return dpsSectionLayout.getStatsSource();
     }
 
     public void setDpsSectionVisibility(boolean visible) {

@@ -68,7 +68,6 @@ public class PlayerInspectorPanel extends PluginPanel {
         toolbar.addNavigation(navButton);
         layout.init(this, dpsSectionVisible);
 
-
         layout.setDpsSectionActionListener(this::onOpenDpsCalculator);
 
     }
@@ -137,8 +136,7 @@ public class PlayerInspectorPanel extends PluginPanel {
             }
         }
 
-        // todo: depending on selection, either player maxed OR local player
-        currentPlayer = new CurrentPlayer(playerName, eq.build(), PlayerStats.maxed());
+        currentPlayer = new CurrentPlayer(playerName, eq.build());
         layout.setTotalGeValue(total);
     }
 
@@ -173,8 +171,7 @@ public class PlayerInspectorPanel extends PluginPanel {
             }
         }
 
-        // todo: depending on selection, either player maxed OR local player
-        currentPlayer = new CurrentPlayer(playerName, eq.build(), PlayerStats.fromClient(client));
+        currentPlayer = new CurrentPlayer(playerName, eq.build());
         layout.setTotalGeValue(total);
     }
 
@@ -187,9 +184,14 @@ public class PlayerInspectorPanel extends PluginPanel {
     }
 
     private void onOpenDpsCalculator(ActionEvent e) {
+        if(currentPlayer == null) {
+            return;
+        }
+
         layout.setDpsSectionProcessing(true);
 
-        this.api.fetchShortLink(currentPlayer, new DpsWikiApi.DpsWikiApiCallback() {
+        // todo: select proper one
+        this.api.fetchShortLink(currentPlayer, PlayerStats.maxed(), new DpsWikiApi.DpsWikiApiCallback() {
             @Override
             public void onError(String errMessage) {
                 log.warn("Could not get Dps shortlink: " + errMessage);

@@ -6,23 +6,50 @@ import java.awt.event.*;
 
 public class DpsSectionLayout extends JPanel {
 
-    private final String dpsButtonText = "View my DPS";
-    private final JButton dpsButton = new JButton(dpsButtonText);
-    public JPanel container = new JPanel(new BorderLayout(5, 0));
+    public enum StatsSource {
+        LocalPlayer("My stats"),
+        Maxed("Maxed stats");
 
-    public DpsSectionLayout(boolean visible) {
-        add(container);
-        container.add(dpsButton);
-        dpsButton.setVisible(visible);
+        private final String label;
+
+        StatsSource(String label) {
+            this.label = label;
+        }
+
+        @Override
+        public String toString() {
+            return label;
+        }
     }
 
+    private final String dpsButtonText = "Open DPS calculator";
+    private final JButton dpsButton = new JButton(dpsButtonText);
+    private final JComboBox<StatsSource> dropdown = new JComboBox<>(StatsSource.values());
 
+    public DpsSectionLayout(boolean visible) {
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+
+        add(createSelectRow());
+        add(Box.createVerticalStrut(5));
+        add(createButtonRow());
+
+        setVisible(visible);
+    }
+
+    // set one listener
     public void setActionListener(ActionListener act) {
+        for (ActionListener l : dpsButton.getActionListeners()) {
+            dpsButton.removeActionListener(l);
+        }
         dpsButton.addActionListener(act);
     }
 
+    public StatsSource getStatsSource() {
+        return (StatsSource) dropdown.getSelectedItem();
+    }
+
     public void setVisibility(boolean visible) {
-        dpsButton.setVisible(visible);
+        setVisible(visible);
     }
 
     public void setLoading() {
@@ -33,5 +60,24 @@ public class DpsSectionLayout extends JPanel {
     public void setActive() {
         dpsButton.setEnabled(true);
         dpsButton.setText(dpsButtonText);
+    }
+
+    private JPanel createSelectRow() {
+        JPanel container = new JPanel(new BorderLayout(5, 0));
+        container.add(new JLabel("Select:"), BorderLayout.WEST);
+        container.add(dropdown, BorderLayout.CENTER);
+        return capHeight(container);
+    }
+
+    private JPanel createButtonRow() {
+        JPanel container = new JPanel(new BorderLayout(0, 0));
+        container.add(dpsButton, BorderLayout.CENTER);
+        return capHeight(container);
+    }
+
+    // cap the height so we can have nice aligmnent
+    private JPanel capHeight(JPanel row) {
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
+        return row;
     }
 }

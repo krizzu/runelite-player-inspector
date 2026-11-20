@@ -60,11 +60,11 @@ public class DpsWikiApi {
 
 
     // note: callback is fired on EDT
-    public void fetchShortLink(CurrentPlayer player, DpsWikiApiCallback callback) {
+    public void fetchShortLink(CurrentPlayer player, PlayerStats stats, DpsWikiApiCallback callback) {
         try {
             JsonObject jsonBody;
             try {
-                jsonBody = buildShortlinkData(player);
+                jsonBody = buildShortlinkData(player, stats);
             } catch (Exception e) {
                 threads.onEdt(() -> {
                     callback.onError("Failed to build url payload: " + e.getLocalizedMessage());
@@ -140,7 +140,7 @@ public class DpsWikiApi {
 
     // borrowed from WikiDpsManager.java
     // note: needs to run on client side
-    private JsonObject buildShortlinkData(CurrentPlayer player) {
+    private JsonObject buildShortlinkData(CurrentPlayer player, PlayerStats stats) {
         JsonObject j = new JsonObject();
 
         // Build the player's loadout data
@@ -165,13 +165,13 @@ public class DpsWikiApi {
         l.add("equipment", eq);
 
         JsonObject skills = new JsonObject();
-        skills.addProperty("hp", player.getStats().getHp());
-        skills.addProperty("atk", player.getStats().getAtk());
-        skills.addProperty("str", player.getStats().getStr());
-        skills.addProperty("def", player.getStats().getDef());
-        skills.addProperty("magic", player.getStats().getMagic());
-        skills.addProperty("prayer", player.getStats().getPrayer());
-        skills.addProperty("ranged", player.getStats().getRanged());
+        skills.addProperty("hp", stats.getHp());
+        skills.addProperty("atk", stats.getAtk());
+        skills.addProperty("str", stats.getStr());
+        skills.addProperty("def", stats.getDef());
+        skills.addProperty("magic", stats.getMagic());
+        skills.addProperty("prayer", stats.getPrayer());
+        skills.addProperty("ranged", stats.getRanged());
         l.add("skills", skills);
 
         JsonObject buffs = new JsonObject();

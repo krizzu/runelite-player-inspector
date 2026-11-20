@@ -6,5 +6,4 @@ import lombok.*;
 public class CurrentPlayer {
     String name;
     PlayerEquipment eq;
-    PlayerStats stats;
 }

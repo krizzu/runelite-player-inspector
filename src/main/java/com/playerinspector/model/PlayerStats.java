@@ -16,6 +16,9 @@ public class PlayerStats {
         );
     }
 
+    /**
+     * note: needs to run on client thread side
+     */
     public static PlayerStats fromClient(Client client) {
         return new PlayerStats(
                 client.getRealSkillLevel(Skill.ATTACK),
@@ -28,24 +31,12 @@ public class PlayerStats {
         );
     }
 
-    @Nullable
-    Integer atk;
 
-    @Nullable
-    Integer str;
-
-    @Nullable
-    Integer def;
-
-    @Nullable
-    Integer ranged;
-
-    @Nullable
-    Integer magic;
-
-    @Nullable
-    Integer prayer;
-
-    @Nullable
-    Integer hp;
+    int atk;
+    int str;
+    int def;
+    int ranged;
+    int magic;
+    int prayer;
+    int hp;
 }
