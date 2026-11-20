@@ -57,23 +57,22 @@ public class EquipmentSlot extends JPanel {
     public void setEquipmentItem(ItemComposition item) {
         AsyncBufferedImage img = items.getImage(item.getId());
 
-        img.onLoaded(() -> {
+        // note: onLoaded fires on the client thread, swing needs edt
+        img.onLoaded(() -> threads.onEdt(() -> {
             img.addTo(icon);
             centerLabel(icon);
             // todo: dunno why, but eq sprites are not centered - offset by 4px.
             icon.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
-        });
+        }));
 
-        threads.onClient(() -> {
-            setPopupMenuForItem(item);
-        });
+        setPopupMenuForItem(item);
 
+        // prices are read off the client
         threads.onClient(() -> {
             long ge = items.getItemPrice(item.getId());
             long ha = item.getHaPrice();
             String gePrice = QuantityFormatter.formatNumber(ge);
             String haPrice = QuantityFormatter.formatNumber(ha);
-
 
             String tooltip = new StringBuilder()
                     .append("<html>")
@@ -83,10 +82,8 @@ public class EquipmentSlot extends JPanel {
                     .append("</html>")
                     .toString();
 
-            icon.setToolTipText(tooltip);
+            threads.onEdt(() -> icon.setToolTipText(tooltip));
         });
-
-
     }
 
     public void clearEquipmentItem() {

@@ -192,7 +192,7 @@ public class DpsWikiApi {
         buffs.addProperty("chargeSpell", false);
         l.add("buffs", buffs);
 
-        l.addProperty("name", player.getName());
+        l.addProperty("name", "Inspected loadout");
 
         loadouts.add(l);
         j.add("loadouts", loadouts);
