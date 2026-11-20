@@ -3,9 +3,7 @@ package com.playerinspector.panel;
 import com.google.inject.Inject;
 import com.playerinspector.dps.*;
 import com.playerinspector.model.*;
-import com.playerinspector.panel.layout.EquipmentSlot;
-import com.playerinspector.panel.layout.PlayerInspectorLayout;
-import com.playerinspector.panel.layout.PlayerSelectedEvent;
+import com.playerinspector.panel.layout.*;
 import com.playerinspector.tracker.NearbyPlayerTracker;
 import com.playerinspector.tracker.NearbyPlayerTrackerUpdate;
 import com.playerinspector.utils.*;
@@ -184,14 +182,25 @@ public class PlayerInspectorPanel extends PluginPanel {
     }
 
     private void onOpenDpsCalculator(ActionEvent e) {
-        if(currentPlayer == null) {
+        if (currentPlayer == null) {
             return;
         }
 
+        DpsSectionLayout.StatsSource source = layout.getDpsStatsSource();
         layout.setDpsSectionProcessing(true);
 
-        // todo: select proper one
-        this.api.fetchShortLink(currentPlayer, PlayerStats.maxed(), new DpsWikiApi.DpsWikiApiCallback() {
+        if (source == DpsSectionLayout.StatsSource.LocalPlayer) {
+            threads.onClient(() -> {
+                PlayerStats stats = PlayerStats.fromClient(client);
+                fetchAndOpenLinkFor(currentPlayer, stats);
+            });
+        } else {
+            fetchAndOpenLinkFor(currentPlayer, PlayerStats.maxed());
+        }
+    }
+
+    private void fetchAndOpenLinkFor(CurrentPlayer player, PlayerStats stats) {
+                this.api.fetchShortLink(player, stats, new DpsWikiApi.DpsWikiApiCallback() {
             @Override
             public void onError(String errMessage) {
                 log.warn("Could not get Dps shortlink: " + errMessage);
@@ -203,10 +212,8 @@ public class PlayerInspectorPanel extends PluginPanel {
                 log.debug("Got the link, opening: " + url);
                 LinkBrowser.browse(url);
                 layout.setDpsSectionProcessing(false);
-
             }
         });
-
     }
 
     @Subscribe
