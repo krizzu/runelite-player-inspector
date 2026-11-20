@@ -26,6 +26,9 @@ public class DpsSectionLayout extends JPanel {
     private final JButton dpsButton = new JButton(dpsButtonText);
     private final JComboBox<StatsSource> dropdown = new JComboBox<>(StatsSource.values());
 
+    // false while logged out - setActive() must not re-enable the button then
+    private boolean interactive = true;
+
     public DpsSectionLayout(boolean visible) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
@@ -52,13 +55,19 @@ public class DpsSectionLayout extends JPanel {
         setVisible(visible);
     }
 
+    public void setInteractive(boolean interactive) {
+        this.interactive = interactive;
+        dropdown.setEnabled(interactive);
+        dpsButton.setEnabled(interactive);
+    }
+
     public void setLoading() {
         dpsButton.setEnabled(false);
         dpsButton.setText("Loading...");
     }
 
     public void setActive() {
-        dpsButton.setEnabled(true);
+        dpsButton.setEnabled(interactive);
         dpsButton.setText(dpsButtonText);
     }
 

@@ -100,6 +100,9 @@ public class NearbyPlayerTracker {
             case HOPPING:
             case LOADING:
             case LOGGING_IN:
+            case LOGIN_SCREEN:
+            case LOGIN_SCREEN_AUTHENTICATOR:
+            case CONNECTION_LOST:
                 clear();
                 break;
             case LOGGED_IN:

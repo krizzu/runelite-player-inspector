@@ -139,6 +139,13 @@ public class PlayerInspectorLayout {
         updatePlayerModel(players);
     }
 
+    public void setInteractive(boolean interactive) {
+        threads.onEdt(() -> {
+            playerSelector.setEnabled(interactive);
+            dpsSectionLayout.setInteractive(interactive);
+        });
+    }
+
     public void setDpsSectionActionListener(ActionListener l) {
         dpsSectionLayout.setActionListener(l);
     }

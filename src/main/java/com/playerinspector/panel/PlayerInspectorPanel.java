@@ -17,6 +17,7 @@ import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.Player;
 import net.runelite.api.PlayerComposition;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.kit.KitType;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -67,6 +68,7 @@ public class PlayerInspectorPanel extends PluginPanel {
         layout.init(this, dpsSectionVisible);
 
         layout.setDpsSectionActionListener(this::onOpenDpsCalculator);
+        layout.setInteractive(client.getGameState() == GameState.LOGGED_IN);
 
     }
 
@@ -215,6 +217,24 @@ public class PlayerInspectorPanel extends PluginPanel {
                 layout.setDpsSectionProcessing(false);
             }
         });
+    }
+
+    @Subscribe
+    private void onGameStateChanged(GameStateChanged change) {
+        switch (change.getGameState()) {
+            case LOGGED_IN:
+                layout.setInteractive(true);
+                break;
+            case LOGIN_SCREEN:
+            case LOGIN_SCREEN_AUTHENTICATOR:
+            case CONNECTION_LOST:
+            case HOPPING:
+                layout.setInteractive(false);
+                clearAllSlots();
+                break;
+            default:
+                break;
+        }
     }
 
     @Subscribe
