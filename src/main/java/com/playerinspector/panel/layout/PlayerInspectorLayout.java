@@ -37,6 +37,8 @@ public class PlayerInspectorLayout {
     private final EventBus bus;
     private final Threads threads;
 
+    private final DpsSectionLayout dpsSectionLayout = new DpsSectionLayout(false);
+
     private final EquipmentSlot head;
     private final EquipmentSlot cape;
     private final EquipmentSlot amulet;
@@ -67,7 +69,7 @@ public class PlayerInspectorLayout {
         this.ring = equipmentSlotFactory.create(EquipmentSlot.Type.Ring);
     }
 
-    public void init(PluginPanel panel) {
+    public void init(PluginPanel panel, boolean dpsPanelVisible) {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         // padding of 10px
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -83,9 +85,10 @@ public class PlayerInspectorLayout {
         panel.add(Box.createVerticalStrut(10));
         panel.add(createGeTotalPanel());
 
-
-        // setup dps buttons
-
+        // dps button
+        panel.add(Box.createVerticalStrut(10));
+        dpsSectionLayout.setVisibility(dpsPanelVisible);
+        panel.add(dpsSectionLayout.container);
 
         setUpPlayerSelectorListeners();
     }
@@ -134,6 +137,22 @@ public class PlayerInspectorLayout {
         }
 
         updatePlayerModel(players);
+    }
+
+    public void setDpsSectionActionListener(ActionListener l) {
+        this.dpsSectionLayout.setActionListener(l);
+    }
+
+    public void setDpsSectionVisibility(boolean visible) {
+        dpsSectionLayout.setVisibility(visible);
+    }
+
+    public void setDpsSectionProcessing(boolean processing) {
+        if(processing) {
+            dpsSectionLayout.setLoading();
+        } else {
+            dpsSectionLayout.setActive();
+        }
     }
 
     private void updatePlayerModel(List<String> players) {

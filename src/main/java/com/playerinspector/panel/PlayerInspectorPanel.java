@@ -28,8 +28,6 @@ import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.*;
 
-import javax.swing.*;
-import java.awt.*;
 import java.awt.event.*;
 
 
@@ -50,9 +48,6 @@ public class PlayerInspectorPanel extends PluginPanel {
     // side nav button
     private NavigationButton navButton;
 
-    // dps buttons + container
-    private final String dpsButtonText = "View my DPS";
-    private final JButton dpsButton = new JButton(dpsButtonText);
 
     @Inject
     public PlayerInspectorPanel(ClientToolbar toolbar, ItemManager itemManager, Client client, PlayerInspectorLayout layout, Threads threads, NearbyPlayerTracker tracker, EventBus bus, DpsWikiApi api) {
@@ -67,13 +62,15 @@ public class PlayerInspectorPanel extends PluginPanel {
     }
 
 
-    public void init(boolean dpsButtonVisible) {
+    public void init(boolean dpsSectionVisible) {
         bus.register(this);
         navButton = NavButtonFactory.create(this);
         toolbar.addNavigation(navButton);
-        layout.init(this);
+        layout.init(this, dpsSectionVisible);
 
-        setUpDpsButtonLayout(dpsButtonVisible);
+
+        layout.setDpsSectionActionListener(this::onOpenDpsCalculator);
+
     }
 
     public void deinit() {
@@ -81,8 +78,8 @@ public class PlayerInspectorPanel extends PluginPanel {
         toolbar.removeNavigation(navButton);
     }
 
-    public void updateSelfDpsButton(boolean visible) {
-        dpsButton.setVisible(visible);
+    public void updateDpsSectionVisibility(boolean visible) {
+        layout.setDpsSectionVisibility(visible);
     }
 
     // note to self: caller needs to use client thread
@@ -189,34 +186,21 @@ public class PlayerInspectorPanel extends PluginPanel {
         currentPlayer = null;
     }
 
-    private void setUpDpsButtonLayout(boolean visible) {
-        add(Box.createVerticalStrut(10));
-        JPanel container = new JPanel(new BorderLayout(5, 0));
-        add(container);
-        dpsButton.addActionListener(this::onSelfDpsClick);
-        container.add(dpsButton);
-        dpsButton.setVisible(visible);
-    }
-
-    private void onSelfDpsClick(ActionEvent e) {
-        dpsButton.setEnabled(false);
-        String dpsButtonLoadingText = "Loading...";
-        dpsButton.setText(dpsButtonLoadingText);
+    private void onOpenDpsCalculator(ActionEvent e) {
+        layout.setDpsSectionProcessing(true);
 
         this.api.fetchShortLink(currentPlayer, new DpsWikiApi.DpsWikiApiCallback() {
             @Override
             public void onError(String errMessage) {
                 log.warn("Could not get Dps shortlink: " + errMessage);
-                dpsButton.setEnabled(true);
-                dpsButton.setText(dpsButtonText);
+                layout.setDpsSectionProcessing(false);
             }
 
             @Override
             public void onSuccess(String url) {
                 log.debug("Got the link, opening: " + url);
                 LinkBrowser.browse(url);
-                dpsButton.setEnabled(true);
-                dpsButton.setText(dpsButtonText);
+                layout.setDpsSectionProcessing(false);
 
             }
         });

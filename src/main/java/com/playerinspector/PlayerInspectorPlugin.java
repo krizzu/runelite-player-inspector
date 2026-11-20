@@ -75,7 +75,7 @@ public class PlayerInspectorPlugin extends Plugin {
 
         if(change.getKey().equals("wikiSelfDpsButton")) {
             boolean dpsButtonVisible = Boolean.parseBoolean(change.getNewValue());
-            panel.updateSelfDpsButton(dpsButtonVisible);
+            panel.updateDpsSectionVisibility(dpsButtonVisible);
         }
     }
 
